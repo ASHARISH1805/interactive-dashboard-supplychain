@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Supply Chain Analytics Dashboard | DataCo</title>
+    <meta name="description" content="Interactive supply chain analytics dashboard with real-time KPIs and data visualization">
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Stylesheet -->
+    <link rel="stylesheet" href="style.css">
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-content">
+            <div class="logo">
+                <div class="logo-icon">📊</div>
+                <h1>Supply Chain Analytics</h1>
+            </div>
+            <div class="header-meta">
+                <div class="status-indicator">
+                    <span class="status-dot"></span>
+                    <span id="connectionStatus">Connected</span>
+                </div>
+                <span id="lastUpdate">Last updated: Never</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="container">
+        <!-- Filters Section -->
+        <section class="filters">
+            <h2>🔍 Filters</h2>
+            <div class="filter-grid">
+                <div class="filter-group">
+                    <label for="regionFilter">Region</label>
+                    <select id="regionFilter">
+                        <option value="">All Regions</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label for="categoryFilter">Product Category</label>
+                    <select id="categoryFilter">
+                        <option value="">All Categories</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label for="shipModeFilter">Shipping Mode</label>
+                    <select id="shipModeFilter">
+                        <option value="">All Modes</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label for="startDate">Start Date</label>
+                    <input type="date" id="startDate">
+                </div>
+                <div class="filter-group">
+                    <label for="endDate">End Date</label>
+                    <input type="date" id="endDate">
+                </div>
+            </div>
+            <div class="filter-actions">
+                <button class="btn btn-primary" onclick="applyFilters()">
+                    ✨ Apply Filters
+                </button>
+                <button class="btn btn-secondary" onclick="resetFilters()">
+                    🔄 Reset
+                </button>
+            </div>
+        </section>
+
+        <!-- KPI Cards -->
+        <section class="kpi-grid" id="kpiGrid">
+            <div class="kpi-card">
+                <div class="kpi-header">
+                    <span class="kpi-title">Total Revenue</span>
+                    <div class="kpi-icon">💰</div>
+                </div>
+                <div class="kpi-value" id="kpiRevenue">$0</div>
+                <div class="kpi-trend">Loading...</div>
+            </div>
+
+            <div class="kpi-card">
+                <div class="kpi-header">
+                    <span class="kpi-title">Total Orders</span>
+                    <div class="kpi-icon">📦</div>
+                </div>
+                <div class="kpi-value" id="kpiOrders">0</div>
+                <div class="kpi-trend">Loading...</div>
+            </div>
+
+            <div class="kpi-card">
+                <div class="kpi-header">
+                    <span class="kpi-title">Profit Margin</span>
+                    <div class="kpi-icon">📈</div>
+                </div>
+                <div class="kpi-value" id="kpiProfit">0%</div>
+                <div class="kpi-trend">Loading...</div>
+            </div>
+
+            <div class="kpi-card">
+                <div class="kpi-header">
+                    <span class="kpi-title">Avg Delivery Time</span>
+                    <div class="kpi-icon">🚚</div>
+                </div>
+                <div class="kpi-value" id="kpiDelivery">0</div>
+                <div class="kpi-trend">Loading...</div>
+            </div>
+
+            <div class="kpi-card">
+                <div class="kpi-header">
+                    <span class="kpi-title">Total Quantity</span>
+                    <div class="kpi-icon">📊</div>
+                </div>
+                <div class="kpi-value" id="kpiQuantity">0</div>
+                <div class="kpi-trend">Loading...</div>
+            </div>
+        </section>
+
+        <!-- Charts Section -->
+        <section class="charts-grid">
+            <div class="chart-card">
+                <div class="chart-header">
+                    <h3 class="chart-title">📈 Sales & Profit Trend</h3>
+                </div>
+                <div class="chart-container">
+                    <canvas id="salesTrendChart"></canvas>
+                </div>
+            </div>
+
+            <div class="chart-card">
+                <div class="chart-header">
+                    <h3 class="chart-title">🚚 Shipping Mode Distribution</h3>
+                </div>
+                <div class="chart-container">
+                    <canvas id="shippingChart"></canvas>
+                </div>
+            </div>
+
+            <div class="chart-card">
+                <div class="chart-header">
+                    <h3 class="chart-title">📦 Product Categories</h3>
+                </div>
+                <div class="chart-container">
+                    <canvas id="categoryChart"></canvas>
+                </div>
+            </div>
+
+            <div class="chart-card">
+                <div class="chart-header">
+                    <h3 class="chart-title">🌍 Regional Performance</h3>
+                </div>
+                <div class="chart-container">
+                    <canvas id="regionChart"></canvas>
+                </div>
+            </div>
+        </section>
+
+        <!-- Data Table -->
+        <section class="table-card">
+            <div class="table-header">
+                <h2 class="table-title">📋 Order Details</h2>
+                <div class="table-actions">
+                    <button class="btn btn-secondary" onclick="exportToCSV()">
+                        📥 Export CSV
+                    </button>
+                    <div class="search-box">
+                        <span class="search-icon">🔍</span>
+                        <input type="text" id="tableSearch" placeholder="Search orders...">
+                    </div>
+                </div>
+            </div>
+            <div class="table-wrapper">
+                <table id="ordersTable">
+                    <thead>
+                        <tr>
+                            <th class="sortable" data-column="order_id" onclick="sortTable('order_id')">Order ID</th>
+                            <th class="sortable" data-column="order_date" onclick="sortTable('order_date')">Date</th>
+                            <th class="sortable" data-column="customer_name" onclick="sortTable('customer_name')">Customer</th>
+                            <th class="sortable" data-column="product_name" onclick="sortTable('product_name')">Product</th>
+                            <th class="sortable" data-column="category" onclick="sortTable('category')">Category</th>
+                            <th class="sortable" data-column="region" onclick="sortTable('region')">Region</th>
+                            <th>Ship Mode</th>
+                            <th class="sortable" data-column="sales" onclick="sortTable('sales')">Sales</th>
+                            <th class="sortable" data-column="profit" onclick="sortTable('profit')">Profit</th>
+                            <th class="sortable" data-column="delivery_days" onclick="sortTable('delivery_days')">Delivery Days</th>
+                        </tr>
+                    </thead>
+                    <tbody id="ordersTableBody">
+                        <tr>
+                            <td colspan="10" style="text-align: center;">
+                                <div class="loading">
+                                    <div class="spinner"></div>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div id="paginationControls" class="pagination-container"></div>
+        </section>
+    </main>
+
+    <!-- Application Script -->
+    <script src="app.js"></script>
+</body>
+</html>
