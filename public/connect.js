@@ -114,43 +114,43 @@ async function connectToQlik() {
             return;
         }
 
-        // 2. Connect using the Access Token
-        const schema = await fetch('https://unpkg.com/enigma.js@2.4.0/schemas/12.170.2.json').then(r => r.json());
-
-        // Pass token in URL (Standard Qlik Cloud JWT behavior)
-        // STRATEGY: Use Local WebSocket Proxy to bypass Browser Origin Blocks
-        // We connect to 'ws://localhost:3000/qlik-ws/...' and the Node server tunnels to Qlik.
-        // Also remove 'qlik-web-integration-id' since we are proxied.
+        // 3. Connect to Qlik Engine (with Timeout)
         const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
         const wsUrl = `${protocol}//${window.location.host}/qlik-ws/app/${CONFIG.appId}?qlik-client-id=${CONFIG.clientId}&access_token=${accessToken}`;
 
-        log(`🔗 Dialing Local Proxy: ${wsUrl}...`);
+        log(`🔗 Dialing Qlik Engine...`);
         const session = enigma.create({ schema, url: wsUrl });
 
-        // Debugging Session Events
-        session.on('notification', (e) => log('🔔 Notification: ' + JSON.stringify(e)));
-        session.on('closed', (e) => log('🚫 Session Closed: ' + JSON.stringify(e)));
-        session.on('opened', () => log('🔓 Socket Connection Opened via Proxy'));
+        // Handle Socket Close
+        session.on('closed', () => {
+            log('⚠️ Socket Closed. Reconnecting...');
+            updateStatus('error');
+        });
 
-        const global = await session.open();
-        log('✅ Session Established via Proxy!');
+        // FORCE TIMEOUT if Engine doesn't reply in 10s
+        const connectionTimeout = new Promise((_, reject) =>
+            setTimeout(() => reject(new Error("Connection Timed Out")), 10000)
+        );
 
-        log(`📂 Opening App (Implicit in Proxy URL): ${CONFIG.appId}...`);
-        app = await global.openDoc(CONFIG.appId);
-        log(`🎉 App Connected: ${app.id}`);
+        app = await Promise.race([
+            session.open(),
+            connectionTimeout
+        ]);
+
+        log('✅ Engine Handshake Complete!');
+        // Open Doc NOT needed for session based url, but let's be safe if it returns global
+        if (app.role !== 'app') {
+            app = await app.openDoc(CONFIG.appId);
+        }
 
     } catch (err) {
-        // Safe Error Handling
-        const msg = err ? (err.message || JSON.stringify(err)) : 'Unknown Error';
-        log('❌ Error: ' + msg);
-        console.error(err);
-
-        // If 401 or Token issue, try generic retry
-        if (msg && (msg.includes('Token') || msg.includes('401') || msg.includes('Socket'))) {
-            log('♻️ Auth issue detected. Retrying in 3s...');
+        log('❌ Connection Failed: ' + err.message);
+        // Clear token if it might be invalid
+        if (err.message.includes('403') || err.message.includes('401') || err.message.includes('Timed Out')) {
             sessionStorage.removeItem('qlik_token');
-            // setTimeout(authenticate, 3000); // Do not auto-redirect for Socket errors yet, just wait.
+            log('🔄 Token possibly bad. Reloading...');
+            setTimeout(() => window.location.reload(), 3000);
         }
-        return app;
+        throw err;
     }
 }
