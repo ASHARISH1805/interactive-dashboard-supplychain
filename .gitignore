@@ -29,3 +29,6 @@ npm-debug.log*
 # Build outputs
 dist/
 build/
+
+.parcel-cache/
+server_log.txt

@@ -1,22 +1,33 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Supply Chain Analytics Dashboard | DataCo</title>
-    <meta name="description" content="Interactive supply chain analytics dashboard with real-time KPIs and data visualization">
-    
+    <meta name="description"
+        content="Interactive supply chain analytics dashboard with real-time KPIs and data visualization">
+
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    
+
     <!-- Stylesheet -->
+    <style>
+        /* Critical CSS to prevent FOUC */
+        body {
+            background-color: #0f0f23;
+            color: #f8fafc;
+            margin: 0;
+        }
+    </style>
     <link rel="stylesheet" href="style.css">
-    
+
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
+
 <body>
     <!-- Header -->
     <header class="header">
@@ -185,14 +196,17 @@
                         <tr>
                             <th class="sortable" data-column="order_id" onclick="sortTable('order_id')">Order ID</th>
                             <th class="sortable" data-column="order_date" onclick="sortTable('order_date')">Date</th>
-                            <th class="sortable" data-column="customer_name" onclick="sortTable('customer_name')">Customer</th>
-                            <th class="sortable" data-column="product_name" onclick="sortTable('product_name')">Product</th>
+                            <th class="sortable" data-column="customer_name" onclick="sortTable('customer_name')">
+                                Customer</th>
+                            <th class="sortable" data-column="product_name" onclick="sortTable('product_name')">Product
+                            </th>
                             <th class="sortable" data-column="category" onclick="sortTable('category')">Category</th>
                             <th class="sortable" data-column="region" onclick="sortTable('region')">Region</th>
                             <th>Ship Mode</th>
                             <th class="sortable" data-column="sales" onclick="sortTable('sales')">Sales</th>
                             <th class="sortable" data-column="profit" onclick="sortTable('profit')">Profit</th>
-                            <th class="sortable" data-column="delivery_days" onclick="sortTable('delivery_days')">Delivery Days</th>
+                            <th class="sortable" data-column="delivery_days" onclick="sortTable('delivery_days')">
+                                Delivery Days</th>
                         </tr>
                     </thead>
                     <tbody id="ordersTableBody">
@@ -213,4 +227,5 @@
     <!-- Application Script -->
     <script src="app.js"></script>
 </body>
+
 </html>

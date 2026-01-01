@@ -52,7 +52,20 @@ function populateFilter(selectId, options) {
 // Setup event listeners
 function setupEventListeners() {
     const searchInput = document.getElementById('tableSearch');
-    searchInput.addEventListener('input', filterTable);
+    searchInput.addEventListener('input', debounce(filterTable, 500));
+}
+
+// Utility: Debounce function
+function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+        const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+    };
 }
 
 // Load main dashboard data
@@ -379,7 +392,7 @@ function resetFilters() {
 function getChartOptions(type) {
     const baseOptions = {
         responsive: true,
-        maintainAspectRatio: true,
+        maintainAspectRatio: false,
         plugins: {
             legend: {
                 display: true,
