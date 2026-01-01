@@ -206,13 +206,11 @@ server.on('upgrade', (req, socket, head) => {
             headers['Sec-WebSocket-Protocol'] = req.headers['sec-websocket-protocol'];
         }
 
-        // INJECT HEADERS (Auth + Integration ID)
+        // INJECT HEADERS (Auth Only - Web Integration ID matches ClientID only in specific setups)
         if (accessToken) {
             headers['Authorization'] = `Bearer ${accessToken}`;
         }
-        if (clientId) {
-            headers['Qlik-Web-Integration-Id'] = clientId; // Attempting to use ClientID as Web Integration ID
-        }
+        // Removed Qlik-Web-Integration-Id injection to prevent 403 errors with OAuth tokens
 
         // Clean Path: Remove query params entirely to avoid conflicts
         // We only need the /app/{id} part.
