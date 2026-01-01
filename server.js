@@ -114,6 +114,61 @@ app.post('/api/qlik/token', (req, res) => {
     tokenReq.end();
 });
 
+// Auto-Login Endpoint using stored Refresh Token
+app.get('/api/qlik/auto-login', (req, res) => {
+    const refreshToken = process.env.QLIK_REFRESH_TOKEN;
+
+    if (!refreshToken) {
+        return res.status(404).json({ error: 'No refresh token configured on server.' });
+    }
+
+    console.log('🔄 Attempting Auto-Refresh with Token...');
+    const clientId = '019b758d9a44d2ab60270d035c71e171'; // Move to env in future
+    const clientSecret = '6fb1ef439ea0f128670a6a65e8f3b0b791567c8b48120cc27e73ffee5d746919';
+    const host = 'flo13jpumt442e8.in.qlikcloud.com';
+
+    const payload = JSON.stringify({
+        client_id: clientId,
+        client_secret: clientSecret,
+        grant_type: 'refresh_token',
+        refresh_token: refreshToken
+    });
+
+    const options = {
+        hostname: host,
+        port: 443,
+        path: '/oauth/token',
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Content-Length': payload.length
+        },
+        family: 4,
+        rejectUnauthorized: false
+    };
+
+    const refreshReq = https.request(options, (tokenRes) => {
+        let data = '';
+        tokenRes.on('data', (chunk) => data += chunk);
+        tokenRes.on('end', () => {
+            if (tokenRes.statusCode >= 200 && tokenRes.statusCode < 300) {
+                console.log('✅ Auto-Renewal Successful');
+                res.json(JSON.parse(data));
+            } else {
+                console.error(`❌ Auto-Renewal Failed (${tokenRes.statusCode}):`, data);
+                res.status(tokenRes.statusCode).send(data);
+            }
+        });
+    });
+
+    refreshReq.on('error', (err) => {
+        res.status(500).json({ error: err.message });
+    });
+
+    refreshReq.write(payload);
+    refreshReq.end();
+});
+
 // Start server with WebSocket Proxy
 const server = app.listen(PORT, () => {
     console.log(`🚀 Server running on http://localhost:${PORT}`);

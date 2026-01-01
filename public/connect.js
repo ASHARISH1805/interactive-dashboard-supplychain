@@ -58,14 +58,37 @@ async function connectToQlik() {
 
             const tokens = await tokenResponse.json();
             accessToken = tokens.access_token;
+
+            // --- CRITICAL FOR USER: SHOW REFRESH TOKEN ---
+            if (tokens.refresh_token) {
+                log('🚨 <b>SAVE THIS REFRESH TOKEN:</b>');
+                log(`<div style="background:#222; color:#0f0; padding:10px; user-select:all; word-break:break-all;">${tokens.refresh_token}</div>`);
+                log('Add this request to Render Environment Variables as: QLIK_REFRESH_TOKEN');
+            }
+            // ----------------------------------------------
+
             sessionStorage.setItem('qlik_token', accessToken);
             log('✅ Access Token Acquired!');
-            console.log('DEBUG_TOKEN:', accessToken); // Print for inspection
+        }
+
+        // 2. TRY AUTO-LOGIN (If no token exists)
+        if (!accessToken) {
+            log('🔄 Attempting Auto-Login via Server...');
+            try {
+                const autoResp = await fetch('/api/qlik/auto-login');
+                if (autoResp.ok) {
+                    const autoData = await autoResp.json();
+                    if (autoData.access_token) {
+                        accessToken = autoData.access_token;
+                        log('✨ Auto-Login Successful!');
+                    }
+                }
+            } catch (e) { console.log('Auto-login skipped'); }
         }
 
         if (!accessToken) {
             log('🔒 No Token found. Redirecting to Login...');
-            setTimeout(authenticate, 1000);
+            setTimeout(authenticate, 2000); // Give time to read logs
             return;
         }
 
