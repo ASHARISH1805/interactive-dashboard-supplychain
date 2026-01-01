@@ -21,14 +21,14 @@
                 <span>📦</span> Qlik Supply Chain
             </div>
             <nav class="nav-links">
-                <div class="nav-link active" id="nav-desc"><span>📊</span> 1. Descriptive</div>
-                <div class="nav-link" id="nav-diag"><span>🔍</span> 2. Diagnostic</div>
-                <div class="nav-link" id="nav-supply"><span>🚚</span> 3. Supply Chain</div>
-                <div class="nav-link" id="nav-cust"><span>👥</span> 4. Customer</div>
-                <div class="nav-link" id="nav-prod"><span>🏷️</span> 5. Product</div>
-                <div class="nav-link" id="nav-geo"><span>🌍</span> 6. Geographic</div>
-                <div class="nav-link" id="nav-pred"><span>🔮</span> 7. Predictive</div>
-                <div class="nav-link" id="nav-pres"><span>💡</span> 8. Prescriptive</div>
+                <div class="nav-link active" id="nav-desc"><span>📊</span> Descriptive</div>
+                <div class="nav-link" id="nav-diag"><span>🔍</span> Diagnostic</div>
+                <div class="nav-link" id="nav-supply"><span>🚚</span> Supply Chain</div>
+                <div class="nav-link" id="nav-cust"><span>👥</span> Customer</div>
+                <div class="nav-link" id="nav-prod"><span>🏷️</span> Product</div>
+                <div class="nav-link" id="nav-geo"><span>🌍</span> Geographic</div>
+                <div class="nav-link" id="nav-pred"><span>🔮</span> Predictive</div>
+                <div class="nav-link" id="nav-pres"><span>💡</span> Prescriptive</div>
             </nav>
             <div class="sidebar-footer">
                 <div style="font-size:10px; opacity:0.7;">v2.4.0 Connected to Qlik Cloud</div>
@@ -43,14 +43,13 @@
             <!-- HEADER -->
             <header class="top-header">
                 <div class="page-title">
-                    <h1>Executive Command Center</h1>
-                    <p>Real-time performance metrics</p>
+                    <h1>Supply Chain Analytics Dashboard</h1>
                 </div>
                 <div class="header-actions">
                     <div class="filter-row">
-                        <button class="btn-filter" id="btn-west">Region: West</button>
-                        <button class="btn-filter" id="btn-east">Region: East</button>
-                        <button class="btn-filter" id="btn-clear">Clear Filters</button>
+                        <button class="btn-filter btn-primary" id="btn-west">West Region</button>
+                        <button class="btn-filter btn-primary" id="btn-east">East Region</button>
+                        <button class="btn-filter" id="btn-clear">Clear</button>
                     </div>
                 </div>
             </header>
@@ -76,22 +75,22 @@
                     </div>
                     <div class="dashboard-grid kpi-row">
                         <div class="card span-1 h-kpi">
-                            <div class="card-title">Total Sales</div>
+                            <div class="card-title">Global Sales Revenue</div>
                             <div class="metric-value" id="kpi-sales">---</div>
                             <div class="card-footer"><span class="trend-badge up">▲ 12%</span> vs last month</div>
                         </div>
                         <div class="card span-1 h-kpi">
-                            <div class="card-title">Profit Margin</div>
+                            <div class="card-title">Net Profit Margin</div>
                             <div class="metric-value" id="kpi-margin">---</div>
                             <div class="card-footer"><span class="trend-badge down">▼ 1.2%</span> vs target</div>
                         </div>
                         <div class="card span-1 h-kpi">
-                            <div class="card-title">Avg Delivery</div>
+                            <div class="card-title">Avg. Delivery Lead Time</div>
                             <div class="metric-value" id="kpi-otif">---</div>
                             <div class="card-footer"><span class="trend-badge">4.2 Days</span></div>
                         </div>
                         <div class="card span-1 h-kpi">
-                            <div class="card-title">Avg Discount</div>
+                            <div class="card-title">Avg. Discount Rate</div>
                             <div class="metric-value" id="kpi-orders">---</div>
                             <div class="card-footer">Given to customers</div>
                         </div>
