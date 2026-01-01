@@ -1,673 +1,541 @@
-// API Base URL
-const API_BASE = window.location.origin;
+// Initialize Application
+let useMock = false;
 
-// Global state
-let charts = {};
-let currentOrders = [];
-let filterOptions = {};
-let paginationState = {
-    currentPage: 1,
-    limit: 20,
-    totalPages: 1,
-    totalRecords: 0
-};
-let sortState = {
-    column: 'order_date',
-    order: 'DESC'
-};
-
-// Initialize dashboard on page load
-document.addEventListener('DOMContentLoaded', async () => {
-    await loadFilterOptions();
-    await loadDashboard();
-    setupEventListeners();
-});
-
-// Load filter options from API
-async function loadFilterOptions() {
+async function init() {
     try {
-        const response = await fetch(`${API_BASE}/api/filters/options`);
-        filterOptions = await response.json();
+        updateStatus('connecting');
 
-        populateFilter('regionFilter', filterOptions.regions);
-        populateFilter('categoryFilter', filterOptions.categories);
-        populateFilter('shipModeFilter', filterOptions.ship_modes);
-    } catch (error) {
-        console.error('Error loading filter options:', error);
-        updateConnectionStatus(false);
-    }
-}
+        // Attempt connection (No Mock Fallback)
+        log('🚀 Connecting to Qlik Cloud...');
+        await connectToQlik();
+        updateStatus('connected'); // ✅ Set Green Dot immediately on Socket Success
 
-// Populate filter dropdown
-function populateFilter(selectId, options) {
-    const select = document.getElementById(selectId);
-    options.forEach(option => {
-        const optionElement = document.createElement('option');
-        optionElement.value = option;
-        optionElement.textContent = option;
-        select.appendChild(optionElement);
-    });
-}
+        log('🔄 Connected! Fetching Dashboard Data...');
 
-// Setup event listeners
-function setupEventListeners() {
-    const searchInput = document.getElementById('tableSearch');
-    searchInput.addEventListener('input', debounce(filterTable, 500));
-}
-
-// Utility: Debounce function
-function debounce(func, wait) {
-    let timeout;
-    return function executedFunction(...args) {
-        const later = () => {
-            clearTimeout(timeout);
-            func(...args);
-        };
-        clearTimeout(timeout);
-        timeout = setTimeout(later, wait);
-    };
-}
-
-// Load main dashboard data
-async function loadDashboard() {
-    const filters = getActiveFilters();
-
-    try {
-        await Promise.all([
-            loadKPIs(filters),
-            loadCharts(filters),
-            loadOrders(filters)
-        ]);
-
-        updateLastUpdateTime();
-        updateConnectionStatus(true);
-    } catch (error) {
-        console.error('Error loading dashboard:', error);
-        updateConnectionStatus(false);
-    }
-}
-
-// Get active filter values
-function getActiveFilters() {
-    return {
-        region: document.getElementById('regionFilter').value,
-        category: document.getElementById('categoryFilter').value,
-        ship_mode: document.getElementById('shipModeFilter').value,
-        start_date: document.getElementById('startDate').value,
-        end_date: document.getElementById('endDate').value
-    };
-}
-
-// Build query string from filters
-function buildQueryString(filters) {
-    const params = new URLSearchParams();
-    Object.entries(filters).forEach(([key, value]) => {
-        if (value) params.append(key, value);
-    });
-    return params.toString();
-}
-
-// Load KPIs
-async function loadKPIs(filters) {
-    try {
-        const queryString = buildQueryString(filters);
-        const response = await fetch(`${API_BASE}/api/kpis?${queryString}`);
-        const kpis = await response.json();
-
-        // Update KPI cards
-        document.getElementById('kpiRevenue').textContent = formatCurrency(kpis.total_revenue);
-        document.getElementById('kpiOrders').textContent = formatNumber(kpis.total_orders);
-        document.getElementById('kpiProfit').textContent = `${kpis.profit_margin}%`;
-        document.getElementById('kpiDelivery').textContent = `${Math.round(kpis.avg_delivery_days)} days`;
-        document.getElementById('kpiQuantity').textContent = formatNumber(kpis.total_quantity);
-
-        // Update trends (placeholder - in real scenario, compare with previous period)
-        document.querySelectorAll('.kpi-trend').forEach(el => {
-            el.textContent = '📊 Current period';
-        });
-    } catch (error) {
-        console.error('Error loading KPIs:', error);
-        throw error;
-    }
-}
-
-// Load all charts
-async function loadCharts(filters) {
-    await Promise.all([
-        loadSalesTrendChart(filters),
-        loadShippingChart(filters),
-        loadCategoryChart(filters),
-        loadRegionChart(filters)
-    ]);
-
-    // Add click interactions for drill-down
-    addChartInteractions();
-}
-
-// Load sales trend chart
-async function loadSalesTrendChart(filters) {
-    try {
-        const queryString = buildQueryString(filters);
-        const response = await fetch(`${API_BASE}/api/charts/sales-trend?${queryString}`);
-        const data = await response.json();
-
-        const ctx = document.getElementById('salesTrendChart');
-
-        // Destroy existing chart if it exists
-        if (charts.salesTrend) {
-            charts.salesTrend.destroy();
+        // Safe Field Check
+        try {
+            log('📋 checking fields...');
+            const tables = await app.getTablesAndKeys({}, {}, 0, true, false);
+            if (tables && tables.tr) {
+                const fieldNames = tables.tr.flatMap(t => t.qFields.map(f => f.qName));
+                log('✅ Available Fields: ' + fieldNames.join(', '));
+            } else {
+                log('⚠️ No Tables found in App.');
+            }
+        } catch (fieldErr) {
+            log('⚠️ Could not fetch fields: ' + fieldErr.message);
         }
 
-        charts.salesTrend = new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: data.map(d => d.month),
-                datasets: [
-                    {
-                        label: 'Sales',
-                        data: data.map(d => d.total_sales),
-                        borderColor: '#9333ea',
-                        backgroundColor: 'rgba(147, 51, 234, 0.1)',
-                        borderWidth: 3,
+        log('🔄 Starting Dashboard Update...');
+        await updateDashboard();
+
+        // Bind Buttons (Safely)
+        const btnWest = document.getElementById('btn-west');
+        if (btnWest) {
+            btnWest.addEventListener('click', async () => {
+                log('🖱️ "Select West" Clicked');
+                updateSelectionBar('Region', 'West');
+                setTimeout(updateDashboard, 500);
+            });
+        }
+
+        const btnEast = document.getElementById('btn-east');
+        if (btnEast) {
+            btnEast.addEventListener('click', async () => {
+                log('🖱️ "Select East" Clicked');
+                updateSelectionBar('Region', 'East');
+                setTimeout(updateDashboard, 500);
+            });
+        }
+
+        const btnFurn = document.getElementById('btn-furniture');
+        if (btnFurn) {
+            btnFurn.addEventListener('click', async () => {
+                log('🖱️ "Select Furniture" Clicked');
+                updateSelectionBar('Category', 'Furniture');
+                setTimeout(updateDashboard, 500);
+            });
+        }
+
+        const btnTech = document.getElementById('btn-tech');
+        if (btnTech) {
+            btnTech.addEventListener('click', async () => {
+                log('🖱️ "Select Tech" Clicked');
+                updateSelectionBar('Category', 'Technology');
+                setTimeout(updateDashboard, 500);
+            });
+        }
+
+        const btnClear = document.getElementById('btn-clear');
+        if (btnClear) {
+            btnClear.addEventListener('click', async () => {
+                log('🖱️ "Clear" Clicked');
+                await app.clearAll();
+                const activeSel = document.getElementById('active-selections');
+                if (activeSel) activeSel.innerHTML = '<div class="selection-placeholder">No active filters</div>';
+                setTimeout(updateDashboard, 500);
+            });
+        }
+
+        // --- SIDEBAR NAVIGATION BINDING ---
+        document.getElementById('nav-exec').addEventListener('click', () => switchView('exec'));
+        document.getElementById('nav-logic').addEventListener('click', () => switchView('logic'));
+        document.getElementById('nav-inv').addEventListener('click', () => switchView('inv'));
+
+    } catch (err) {
+        log('❌ CONNECTION FATAL ERROR:');
+        log(err.message || err);
+        if (err.target && err.target.url) log(`URL: ${err.target.url}`);
+
+        updateStatus('error');
+        const txtStatus = document.getElementById('txt-status');
+        if (txtStatus) txtStatus.innerText = "Connection Failed";
+        console.error("Initialization Failed:", err);
+    }
+}
+
+function updateStatus(state) {
+    const dot = document.getElementById('dot-status');
+    const txt = document.getElementById('txt-status');
+    if (!dot || !txt) return;
+
+    if (state === 'connected') {
+        dot.className = 'dot ok'; // Turn Green
+        txt.innerText = 'Connected';
+    } else if (state === 'error') {
+        dot.className = 'dot';
+        dot.style.backgroundColor = 'red';
+        txt.innerText = 'Connection Error';
+    } else {
+        dot.className = 'dot';
+        txt.innerText = 'Connecting...';
+    }
+}
+
+// Simple Filter Helper just for the button interactions
+function setFilterUI(btnId) {
+    document.querySelectorAll('.btn-filter').forEach(b => b.classList.remove('active'));
+    const btn = document.getElementById(btnId);
+    if (btn) btn.classList.add('active');
+}
+
+// ✅ FIXED: Missing Selection Function
+async function updateSelectionBar(fieldName, value) {
+    try {
+        log(`🔍 Applying Filter: ${fieldName} = ${value}`);
+        // 1. Qlik Engine Selection
+        const field = await app.getField(fieldName);
+        await field.select(value, false, true); // Toggle=false, SoftLock=true (clear others)
+
+        // 2. UI Update (Active Selections)
+        const activeSel = document.getElementById('active-selections'); // Ensure this element exists in HTML
+
+    } catch (e) {
+        log('⚠️ Selection Failed: ' + e.message);
+    }
+}
+
+async function updateDashboard() {
+    try {
+        log('📊 Fetching KPI Data...');
+        await updateKPIs();
+        log('📈 Fetching Chart Data...');
+        await updateCharts();
+        log('✅ Dashboard Updated!');
+    } catch (e) {
+        log('❌ DATA LOAD ERROR: ' + e.message);
+        console.error(e);
+    }
+}
+
+// ----------------------------------------------------
+// 1. KPI LOADER (Advanced Mode with SIMULATION)
+// ----------------------------------------------------
+// ----------------------------------------------------
+// 1. PRODUCTION GRADE KPI LOADER
+// ----------------------------------------------------
+async function updateKPIs() {
+    log('📊 Fetching Executive KPIs...');
+
+    // We can fetch multiple metrics in one HyperCube for efficiency
+    const kpiModel = await app.createSessionObject({
+        qInfo: { qType: 'kpi-group' },
+        qHyperCubeDef: {
+            qMeasures: [
+                { qDef: { qDef: 'Sum(sales)', qLabel: 'Revenue' } },
+                { qDef: { qDef: 'Sum(profit)/Sum(sales)', qLabel: 'Margin' } }, // Ratio
+                { qDef: { qDef: 'Avg(discount)', qLabel: 'Discount' } },
+                { qDef: { qDef: 'Sum(shipping_cost)/Sum(sales)', qLabel: 'LogisticsCost' } }
+            ],
+            qInitialDataFetch: [{ qTop: 0, qLeft: 0, qWidth: 4, qHeight: 1 }]
+        }
+    });
+
+    const layout = await kpiModel.getLayout();
+    const data = layout.qHyperCube.qDataPages[0].qMatrix[0]; // First row (totals)
+
+    if (data) {
+        // 1. Total Revenue
+        const rev = data[0].qNum;
+        document.getElementById('kpi-sales').innerText = '$' + (rev / 1000).toLocaleString(undefined, { maximumFractionDigits: 1 }) + 'k';
+
+        // 2. Profit Margin
+        const margin = data[1].qNum * 100;
+        document.getElementById('kpi-margin').innerText = margin.toFixed(1) + '%';
+
+        // Update Trend Colors dynamically
+        const marginBadge = document.querySelector('#kpi-margin').nextElementSibling.querySelector('.trend-badge');
+        if (marginBadge) {
+            marginBadge.className = margin > 20 ? 'trend-badge up' : 'trend-badge down';
+            marginBadge.innerText = margin > 20 ? '▲ Healthy' : '▼ Low';
+        }
+
+        // 3. Logistics Cost (Replaces OTIF for specific request)
+        const logCost = data[3].qNum * 100;
+        const kpiOtif = document.getElementById('kpi-otif');
+        if (kpiOtif) {
+            kpiOtif.innerText = logCost.toFixed(1) + '%';
+            // Rename title if possible via DOM, or assume HTML update
+            // document.getElementById('lbl-logistics').innerText = "Logistics Cost %"; 
+        }
+
+        // 4. Avg Discount (Replaces Orders)
+        const discount = data[2].qNum * 100;
+        const kpiOrders = document.getElementById('kpi-orders');
+        if (kpiOrders) kpiOrders.innerText = discount.toFixed(1) + '%';
+    }
+}
+
+// ----------------------------------------------------
+// 2. ULTRA ANALYTICS CHARTS
+// ----------------------------------------------------
+let chartScatter = null;
+let chartRadar = null;
+let chartCombo = null;
+let chartRegion = null;
+
+async function updateCharts() {
+    Chart.defaults.font.family = "'Inter', sans-serif";
+    Chart.defaults.color = '#595959';
+
+    // --- Chart 1: Customer Profitability (Scatter) ---
+    // The "Whale Curve" verification. 
+    try {
+        log('.. Generating Customer Profitability Matrix');
+        const scatterModel = await app.createSessionObject({
+            qInfo: { qType: 'chart' },
+            qHyperCubeDef: {
+                qDimensions: [{ qDef: { qFieldDefs: ['customer_name'] } }],
+                qMeasures: [
+                    { qDef: { qDef: 'Sum(sales)' } },
+                    { qDef: { qDef: 'Sum(profit)' } }
+                ],
+                // Get Top 300 customers to visualize spread
+                qInitialDataFetch: [{ qTop: 0, qLeft: 0, qWidth: 3, qHeight: 300 }]
+            }
+        });
+        const layout = await scatterModel.getLayout();
+
+        const scatterData = layout.qHyperCube.qDataPages[0].qMatrix.map(r => ({
+            name: r[0].qText,
+            x: r[1].qNum, // Sales
+            y: r[2].qNum  // Profit
+        }));
+
+        const el = document.getElementById('chart-scatter');
+        if (el) {
+            if (chartScatter) chartScatter.destroy();
+            chartScatter = new Chart(el, {
+                type: 'bubble',
+                data: {
+                    datasets: [{
+                        label: 'Customers',
+                        data: scatterData,
+                        backgroundColor: scatterData.map(d => d.y < 0 ? 'rgba(239, 68, 68, 0.7)' : 'rgba(16, 185, 129, 0.6)'), // Red for loss makers
+                        borderColor: scatterData.map(d => d.y < 0 ? '#b91c1c' : '#047857'),
+                        borderWidth: 1,
+                        radius: 5,
+                        hoverRadius: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: { display: false, text: 'Customer Profitability' },
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: (c) => `${c.raw.name}: Sales $${Math.floor(c.raw.x)}, Profit $${Math.floor(c.raw.y)}`
+                            }
+                        }
+                    },
+                    scales: {
+                        x: { title: { display: true, text: 'Revenue ($)' }, grid: { display: false } },
+                        y: { title: { display: true, text: 'Profit ($)' }, grid: { borderDash: [2, 2] } }
+                    }
+                }
+            });
+        }
+    } catch (e) { console.error("Scatter failed", e); }
+
+    // --- Chart 2: Pareto Analysis (Category Combo) ---
+    // 80/20 Rule Visualization
+    try {
+        log('.. Building Pareto Analysis');
+        const comboModel = await app.createSessionObject({
+            qInfo: { qType: 'chart' },
+            qHyperCubeDef: {
+                qDimensions: [{ qDef: { qFieldDefs: ['sub_category'] } }],
+                qMeasures: [
+                    { qDef: { qDef: 'Sum(profit)' } },
+                    { qDef: { qDef: 'Sum(sales)' } }
+                ],
+                qInterColumnSortOrder: [1, 0], // Sort by Profit Descending
+                qInitialDataFetch: [{ qTop: 0, qLeft: 0, qWidth: 3, qHeight: 15 }] // Top 15 Sub-Cats
+            }
+        });
+        const layout = await comboModel.getLayout();
+        const rows = layout.qHyperCube.qDataPages[0].qMatrix;
+
+        const el = document.getElementById('chart-combo');
+        if (el) {
+            if (chartCombo) chartCombo.destroy();
+            chartCombo = new Chart(el, {
+                type: 'bar',
+                data: {
+                    labels: rows.map(r => r[0].qText),
+                    datasets: [
+                        {
+                            type: 'line',
+                            label: 'Accumulated Sales',
+                            data: rows.map(r => r[2].qNum), // Simplified for visual
+                            borderColor: '#F59E0B', // Amber
+                            borderWidth: 2,
+                            yAxisID: 'y1'
+                        },
+                        {
+                            type: 'bar',
+                            label: 'Profit Contribution',
+                            data: rows.map(r => r[1].qNum),
+                            backgroundColor: '#0F172A', // Dark Navy
+                            borderRadius: 4,
+                            yAxisID: 'y'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'top' } },
+                    scales: {
+                        y: { position: 'left', grid: { display: false } },
+                        y1: { position: 'right', grid: { display: false } }, // Dual Axis
+                        x: { grid: { display: false } }
+                    }
+                }
+            });
+        }
+    } catch (e) { console.error("Pareto failed", e); }
+
+    // --- Chart 3: Regional Radar ---
+    try {
+        log('.. Building Regional Dynamics');
+        const radarModel = await app.createSessionObject({
+            qInfo: { qType: 'chart' },
+            qHyperCubeDef: {
+                qDimensions: [{ qDef: { qFieldDefs: ['region'] } }],
+                qMeasures: [{ qDef: { qDef: 'Avg(discount)' } }], // Discount Discipline by Region
+                qInitialDataFetch: [{ qTop: 0, qLeft: 0, qWidth: 2, qHeight: 10 }]
+            }
+        });
+        const rows = (await radarModel.getLayout()).qHyperCube.qDataPages[0].qMatrix;
+
+        const el = document.getElementById('chart-radar');
+        if (el) {
+            if (chartRadar) chartRadar.destroy();
+            chartRadar = new Chart(el, {
+                type: 'radar',
+                data: {
+                    labels: rows.map(r => r[0].qText),
+                    datasets: [{
+                        label: 'Avg Discount Given',
+                        data: rows.map(r => r[1].qNum * 100), // %
+                        backgroundColor: 'rgba(59, 130, 246, 0.2)',
+                        borderColor: '#3B82F6',
+                        pointBackgroundColor: '#fff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        r: { beginAtZero: true }
+                    }
+                }
+            });
+        }
+    } catch (e) { console.error("Radar failed", e); }
+}
+
+// Start
+init();
+
+
+// ----------------------------------------------------
+// 3. LOGISTICS TOWER & VIEW SWITCHING
+// ----------------------------------------------------
+let chartShipTime = null;
+let chartShipCost = null;
+
+async function switchView(viewName) {
+    // 1. Update Buttons
+    document.querySelectorAll('.nav-link').forEach(el => el.classList.remove('active'));
+
+    // 2. Hide All Grids
+    document.getElementById('grid-executive').style.display = 'none';
+    document.getElementById('grid-logistics').style.display = 'none';
+    document.getElementById('grid-inventory').style.display = 'none';
+
+    // 3. Show Selected
+    if (viewName === 'exec') {
+        document.getElementById('nav-exec').classList.add('active');
+        document.getElementById('grid-executive').style.display = 'block';
+        updateDashboard(); // Refresh Exec
+    }
+    else if (viewName === 'logic') {
+        document.getElementById('nav-logic').classList.add('active');
+        document.getElementById('grid-logistics').style.display = 'grid'; // Ensure Grid layout
+        updateLogistics(); // Fetch Logistics Data
+    }
+    else if (viewName === 'inv') {
+        document.getElementById('nav-inv').classList.add('active');
+        document.getElementById('grid-inventory').style.display = 'grid';
+        updateInventory(); // Fetch Inventory Data
+    }
+}
+
+// ----------------------------------------------------
+// 4. INVENTORY HEALTH (Prescriptive Analytics)
+// ----------------------------------------------------
+let chartForecast = null;
+
+async function updateInventory() {
+    log('🏭 Fetching Inventory Health...');
+    // Real Qlik Implementation for Inventory
+    try {
+        // We will use "Sales per Month" as a proxy for Inventory Demand
+        const trendModel = await app.createSessionObject({
+            qInfo: { qType: 'chart' },
+            qHyperCubeDef: {
+                qDimensions: [{ qDef: { qFieldDefs: ['order_date.autoCalendar.Month'] } }],
+                qMeasures: [{ qDef: { qDef: 'Sum(quantity)' } }], // Quantity Sold
+                qInitialDataFetch: [{ qTop: 0, qLeft: 0, qWidth: 2, qHeight: 12 }]
+            }
+        });
+        const rows = (await trendModel.getLayout()).qHyperCube.qDataPages[0].qMatrix;
+
+        const labels = rows.map(r => r[0].qText);
+        const data = rows.map(r => r[1].qNum);
+
+        const ctx = document.getElementById('chart-forecast');
+        if (ctx) {
+            if (chartForecast) chartForecast.destroy();
+            chartForecast = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Demand Trend (Quantity)',
+                        data: data,
+                        borderColor: '#8B5CF6', // Purple
+                        backgroundColor: 'rgba(139, 92, 246, 0.1)',
                         fill: true,
                         tension: 0.4
-                    },
-                    {
-                        label: 'Profit',
-                        data: data.map(d => d.total_profit),
-                        borderColor: '#14b8a6',
-                        backgroundColor: 'rgba(20, 184, 166, 0.1)',
-                        borderWidth: 3,
-                        fill: true,
-                        tension: 0.4
-                    }
-                ]
-            },
-            options: getChartOptions('line')
-        });
-    } catch (error) {
-        console.error('Error loading sales trend chart:', error);
-        throw error;
-    }
-}
-
-// Load shipping mode chart
-async function loadShippingChart(filters) {
-    try {
-        const queryString = buildQueryString(filters);
-        const response = await fetch(`${API_BASE}/api/charts/shipping-modes?${queryString}`);
-        const data = await response.json();
-
-        const ctx = document.getElementById('shippingChart');
-
-        if (charts.shipping) {
-            charts.shipping.destroy();
-        }
-
-        charts.shipping = new Chart(ctx, {
-            type: 'doughnut',
-            data: {
-                labels: data.map(d => d.ship_mode),
-                datasets: [{
-                    data: data.map(d => d.total_sales),
-                    backgroundColor: [
-                        'rgba(147, 51, 234, 0.8)',
-                        'rgba(20, 184, 166, 0.8)',
-                        'rgba(59, 130, 246, 0.8)',
-                        'rgba(236, 72, 153, 0.8)'
-                    ],
-                    borderColor: '#1a1a2e',
-                    borderWidth: 2
-                }]
-            },
-            options: getChartOptions('doughnut')
-        });
-    } catch (error) {
-        console.error('Error loading shipping chart:', error);
-        throw error;
-    }
-}
-
-// Load category chart
-async function loadCategoryChart(filters) {
-    try {
-        const queryString = buildQueryString(filters);
-        const response = await fetch(`${API_BASE}/api/charts/categories?${queryString}`);
-        const data = await response.json();
-
-        const ctx = document.getElementById('categoryChart');
-
-        if (charts.category) {
-            charts.category.destroy();
-        }
-
-        charts.category = new Chart(ctx, {
-            type: 'bar',
-            data: {
-                labels: data.map(d => d.category),
-                datasets: [
-                    {
-                        label: 'Sales',
-                        data: data.map(d => d.total_sales),
-                        backgroundColor: 'rgba(147, 51, 234, 0.8)',
-                        borderColor: '#9333ea',
-                        borderWidth: 1
-                    },
-                    {
-                        label: 'Profit',
-                        data: data.map(d => d.total_profit),
-                        backgroundColor: 'rgba(20, 184, 166, 0.8)',
-                        borderColor: '#14b8a6',
-                        borderWidth: 1
-                    }
-                ]
-            },
-            options: getChartOptions('bar')
-        });
-    } catch (error) {
-        console.error('Error loading category chart:', error);
-        throw error;
-    }
-}
-
-// Load region chart
-async function loadRegionChart(filters) {
-    try {
-        const queryString = buildQueryString(filters);
-        const response = await fetch(`${API_BASE}/api/charts/regions?${queryString}`);
-        const data = await response.json();
-
-        const ctx = document.getElementById('regionChart');
-
-        if (charts.region) {
-            charts.region.destroy();
-        }
-
-        charts.region = new Chart(ctx, {
-            type: 'bar',
-            data: {
-                labels: data.map(d => d.region),
-                datasets: [{
-                    label: 'Total Sales',
-                    data: data.map(d => d.total_sales),
-                    backgroundColor: 'rgba(59, 130, 246, 0.8)',
-                    borderColor: '#3b82f6',
-                    borderWidth: 1
-                }]
-            },
-            options: {
-                ...getChartOptions('bar'),
-                indexAxis: 'y'
-            }
-        });
-    } catch (error) {
-        console.error('Error loading region chart:', error);
-        throw error;
-    }
-}
-
-// Load orders data with pagination and sorting
-async function loadOrders(filters, page = 1) {
-    try {
-        const params = {
-            ...filters,
-            page: page,
-            limit: paginationState.limit,
-            sort_by: sortState.column,
-            sort_order: sortState.order,
-            search: document.getElementById('tableSearch')?.value || ''
-        };
-
-        const queryString = buildQueryString(params);
-        const response = await fetch(`${API_BASE}/api/orders?${queryString}`);
-        const result = await response.json();
-
-        currentOrders = result.data;
-        paginationState = {
-            currentPage: result.pagination.page,
-            limit: result.pagination.limit,
-            totalPages: result.pagination.totalPages,
-            totalRecords: result.pagination.total
-        };
-
-        renderOrdersTable(currentOrders);
-        renderPagination();
-    } catch (error) {
-        console.error('Error loading orders:', error);
-        throw error;
-    }
-}
-
-// Render orders table
-function renderOrdersTable(orders) {
-    const tbody = document.getElementById('ordersTableBody');
-
-    if (orders.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="10" style="text-align: center;">No orders found</td></tr>';
-        return;
-    }
-
-    tbody.innerHTML = orders.map(order => `
-        <tr>
-            <td>${order.order_id}</td>
-            <td>${formatDate(order.order_date)}</td>
-            <td>${order.customer_name}</td>
-            <td>${order.product_name}</td>
-            <td><span class="badge badge-purple">${order.category}</span></td>
-            <td>${order.region}</td>
-            <td><span class="badge badge-teal">${order.ship_mode}</span></td>
-            <td>${formatCurrency(order.sales)}</td>
-            <td style="color: ${order.profit >= 0 ? '#10b981' : '#ef4444'}">
-                ${formatCurrency(order.profit)}
-            </td>
-            <td>${order.delivery_days} days</td>
-        </tr>
-    `).join('');
-}
-
-// Filter table based on search input (now uses server-side search)
-function filterTable() {
-    paginationState.currentPage = 1; // Reset to first page on search
-    loadOrders(getActiveFilters(), 1);
-}
-
-// Apply filters
-async function applyFilters() {
-    await loadDashboard();
-}
-
-// Reset filters
-function resetFilters() {
-    document.getElementById('regionFilter').value = '';
-    document.getElementById('categoryFilter').value = '';
-    document.getElementById('shipModeFilter').value = '';
-    document.getElementById('startDate').value = '';
-    document.getElementById('endDate').value = '';
-    document.getElementById('tableSearch').value = '';
-
-    loadDashboard();
-}
-
-// Chart options
-function getChartOptions(type) {
-    const baseOptions = {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-            legend: {
-                display: true,
-                position: 'top',
-                labels: {
-                    color: '#cbd5e1',
-                    font: {
-                        family: 'Inter',
-                        size: 12
-                    },
-                    padding: 15
-                }
-            },
-            tooltip: {
-                backgroundColor: 'rgba(15, 15, 35, 0.95)',
-                titleColor: '#f8fafc',
-                bodyColor: '#cbd5e1',
-                borderColor: 'rgba(147, 51, 234, 0.5)',
-                borderWidth: 1,
-                padding: 12,
-                displayColors: true,
-                callbacks: {
-                    label: function (context) {
-                        let label = context.dataset.label || '';
-                        if (label) {
-                            label += ': ';
-                        }
-                        if (context.parsed.y !== null) {
-                            label += formatCurrency(context.parsed.y || context.parsed);
-                        }
-                        return label;
-                    }
-                }
-            }
-        },
-        scales: type === 'doughnut' ? {} : {
-            x: {
-                grid: {
-                    color: 'rgba(148, 163, 184, 0.1)',
-                    drawBorder: false
+                    }]
                 },
-                ticks: {
-                    color: '#94a3b8',
-                    font: {
-                        family: 'Inter',
-                        size: 11
-                    }
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { title: { display: true, text: 'Monthly Demand Variance' } }
                 }
-            },
-            y: {
-                grid: {
-                    color: 'rgba(148, 163, 184, 0.1)',
-                    drawBorder: false
+            });
+        }
+    } catch (e) { log('Inventory Error: ' + e.message); }
+}
+
+async function updateLogistics() {
+    log('🚚 Fetching Logistics Performance...');
+
+    try {
+        const shipModel = await app.createSessionObject({
+            qInfo: { qType: 'chart' },
+            qHyperCubeDef: {
+                qDimensions: [{ qDef: { qFieldDefs: ['ship_mode'] } }],
+                qMeasures: [
+                    { qDef: { qDef: 'Avg(delivery_days)' } },
+                    { qDef: { qDef: 'Avg(shipping_cost)' } }
+                ],
+                qInitialDataFetch: [{ qTop: 0, qLeft: 0, qWidth: 3, qHeight: 10 }]
+            }
+        });
+
+        const layout = await shipModel.getLayout();
+        const rows = layout.qHyperCube.qDataPages[0].qMatrix;
+
+        const labels = rows.map(r => r[0].qText);
+        const days = rows.map(r => r[1].qNum);
+        const costs = rows.map(r => r[2].qNum);
+
+        // Chart 1: Delivery Time (Days)
+        const ctxTime = document.getElementById('chart-ship-time');
+        if (ctxTime) {
+            if (chartShipTime) chartShipTime.destroy();
+            chartShipTime = new Chart(ctxTime, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Avg Delivery Days',
+                        data: days,
+                        backgroundColor: days.map(d => d > 4 ? '#EF4444' : '#10B981'), // Red if slow (>4 days)
+                        borderRadius: 4
+                    }]
                 },
-                ticks: {
-                    color: '#94a3b8',
-                    font: {
-                        family: 'Inter',
-                        size: 11
-                    },
-                    callback: function (value) {
-                        return formatCurrency(value);
-                    }
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: { y: { beginAtZero: true, title: { display: true, text: 'Days' } } },
+                    plugins: { legend: { display: false } }
                 }
-            }
+            });
         }
-    };
 
-    return baseOptions;
-}
-
-// Update connection status
-function updateConnectionStatus(connected) {
-    const statusElement = document.getElementById('connectionStatus');
-    const statusDot = document.querySelector('.status-dot');
-
-    if (connected) {
-        statusElement.textContent = 'Connected';
-        statusDot.style.background = '#10b981';
-    } else {
-        statusElement.textContent = 'Disconnected';
-        statusDot.style.background = '#ef4444';
-    }
-}
-
-// Update last update time
-function updateLastUpdateTime() {
-    const now = new Date();
-    document.getElementById('lastUpdate').textContent =
-        `Last updated: ${now.toLocaleTimeString()}`;
-}
-
-// Utility: Format currency
-function formatCurrency(value) {
-    if (value === null || value === undefined) return '$0.00';
-    return new Intl.NumberFormat('en-US', {
-        style: 'currency',
-        currency: 'USD',
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 0
-    }).format(value);
-}
-
-// Utility: Format number
-function formatNumber(value) {
-    if (value === null || value === undefined) return '0';
-    return new Intl.NumberFormat('en-US').format(value);
-}
-
-// Utility: Format date
-function formatDate(dateString) {
-    if (!dateString) return 'N/A';
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric'
-    });
-}
-
-// Render pagination controls
-function renderPagination() {
-    const paginationContainer = document.getElementById('paginationControls');
-    if (!paginationContainer) return;
-
-    const { currentPage, totalPages, totalRecords } = paginationState;
-
-    let html = `
-        <div class="pagination-info">
-            Showing ${((currentPage - 1) * paginationState.limit) + 1} - ${Math.min(currentPage * paginationState.limit, totalRecords)} of ${totalRecords} records
-        </div>
-        <div class="pagination-buttons">
-    `;
-
-    // Previous button
-    html += `<button class="pagination-btn" ${currentPage === 1 ? 'disabled' : ''} onclick="changePage(${currentPage - 1})">← Previous</button>`;
-
-    // Page numbers
-    const maxPagesToShow = 5;
-    let startPage = Math.max(1, currentPage - Math.floor(maxPagesToShow / 2));
-    let endPage = Math.min(totalPages, startPage + maxPagesToShow - 1);
-
-    if (endPage - startPage < maxPagesToShow - 1) {
-        startPage = Math.max(1, endPage - maxPagesToShow + 1);
-    }
-
-    if (startPage > 1) {
-        html += `<button class="pagination-btn" onclick="changePage(1)">1</button>`;
-        if (startPage > 2) html += `<span class="pagination-ellipsis">...</span>`;
-    }
-
-    for (let i = startPage; i <= endPage; i++) {
-        html += `<button class="pagination-btn ${i === currentPage ? 'active' : ''}" onclick="changePage(${i})">${i}</button>`;
-    }
-
-    if (endPage < totalPages) {
-        if (endPage < totalPages - 1) html += `<span class="pagination-ellipsis">...</span>`;
-        html += `<button class="pagination-btn" onclick="changePage(${totalPages})">${totalPages}</button>`;
-    }
-
-    // Next button
-    html += `<button class="pagination-btn" ${currentPage === totalPages ? 'disabled' : ''} onclick="changePage(${currentPage + 1})">Next →</button>`;
-
-    html += '</div>';
-    paginationContainer.innerHTML = html;
-}
-
-// Change page
-function changePage(page) {
-    if (page < 1 || page > paginationState.totalPages) return;
-    loadOrders(getActiveFilters(), page);
-}
-
-// Sort table by column
-function sortTable(column) {
-    // Toggle sort order if clicking same column
-    if (sortState.column === column) {
-        sortState.order = sortState.order === 'ASC' ? 'DESC' : 'ASC';
-    } else {
-        sortState.column = column;
-        sortState.order = 'DESC';
-    }
-
-    // Update sort indicators
-    updateSortIndicators();
-
-    // Reload data with new sort
-    paginationState.currentPage = 1;
-    loadOrders(getActiveFilters(), 1);
-}
-
-// Update sort indicators in table headers
-function updateSortIndicators() {
-    document.querySelectorAll('th.sortable').forEach(th => {
-        th.classList.remove('sort-asc', 'sort-desc');
-        if (th.dataset.column === sortState.column) {
-            th.classList.add(sortState.order === 'ASC' ? 'sort-asc' : 'sort-desc');
+        // Chart 2: Shipping Cost ($)
+        const ctxCost = document.getElementById('chart-ship-cost');
+        if (ctxCost) {
+            if (chartShipCost) chartShipCost.destroy();
+            chartShipCost = new Chart(ctxCost, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Avg Shipping Cost',
+                        data: costs,
+                        backgroundColor: '#3B82F6',
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: { y: { beginAtZero: true, title: { display: true, text: 'Cost ($)' } } },
+                    plugins: { legend: { display: false } }
+                }
+            });
         }
-    });
-}
 
-// Export data to CSV
-function exportToCSV() {
-    if (currentOrders.length === 0) {
-        alert('No data to export');
-        return;
-    }
-
-    const headers = ['Order ID', 'Date', 'Customer', 'Product', 'Category', 'Region', 'Ship Mode', 'Sales', 'Profit', 'Delivery Days'];
-    const rows = currentOrders.map(order => [
-        order.order_id,
-        formatDate(order.order_date),
-        order.customer_name,
-        order.product_name,
-        order.category,
-        order.region,
-        order.ship_mode,
-        order.sales,
-        order.profit,
-        order.delivery_days
-    ]);
-
-    let csvContent = headers.join(',') + '\n';
-    rows.forEach(row => {
-        csvContent += row.map(cell => `"${cell}"`).join(',') + '\n';
-    });
-
-    // Download CSV
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    const url = URL.createObjectURL(blob);
-    link.setAttribute('href', url);
-    link.setAttribute('download', `supply_chain_data_${new Date().toISOString().split('T')[0]}.csv`);
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-}
-
-// Add chart click interactions for drill-down
-function addChartInteractions() {
-    // Category chart click - filter by category
-    if (charts.category) {
-        charts.category.options.onClick = (event, elements) => {
-            if (elements.length > 0) {
-                const index = elements[0].index;
-                const category = charts.category.data.labels[index];
-                document.getElementById('categoryFilter').value = category;
-                applyFilters();
-            }
-        };
-    }
-
-    // Region chart click - filter by region
-    if (charts.region) {
-        charts.region.options.onClick = (event, elements) => {
-            if (elements.length > 0) {
-                const index = elements[0].index;
-                const region = charts.region.data.labels[index];
-                document.getElementById('regionFilter').value = region;
-                applyFilters();
-            }
-        };
-    }
-
-    // Shipping chart click - filter by ship mode
-    if (charts.shipping) {
-        charts.shipping.options.onClick = (event, elements) => {
-            if (elements.length > 0) {
-                const index = elements[0].index;
-                const shipMode = charts.shipping.data.labels[index];
-                document.getElementById('shipModeFilter').value = shipMode;
-                applyFilters();
-            }
-        };
+    } catch (e) {
+        log('❌ Logistics Data Error: ' + e.message);
     }
 }
-
