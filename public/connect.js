@@ -63,7 +63,29 @@ async function connectToQlik() {
             if (tokens.refresh_token) {
                 log('🚨 <b>SAVE THIS REFRESH TOKEN:</b>');
                 log(`<div style="background:#222; color:#0f0; padding:10px; user-select:all; word-break:break-all;">${tokens.refresh_token}</div>`);
-                log('Add this request to Render Environment Variables as: QLIK_REFRESH_TOKEN');
+
+                // CREATE VISIBLE BUTTON FOR USER
+                const btn = document.createElement('button');
+                btn.innerText = "🔑 CLICK TO COPY REFRESH TOKEN";
+                btn.style.position = "fixed";
+                btn.style.top = "10px";
+                btn.style.left = "50%";
+                btn.style.transform = "translateX(-50%)";
+                btn.style.zIndex = "9999";
+                btn.style.padding = "15px 30px";
+                btn.style.background = "#ef4444";
+                btn.style.color = "white";
+                btn.style.fontSize = "16px";
+                btn.style.fontWeight = "bold";
+                btn.style.border = "none";
+                btn.style.borderRadius = "8px";
+                btn.style.boxShadow = "0 10px 25px rgba(0,0,0,0.5)";
+                btn.style.cursor = "pointer";
+                btn.onclick = () => {
+                    navigator.clipboard.writeText(tokens.refresh_token);
+                    alert("COPIED! Now paste this into Render Environment Variables as: QLIK_REFRESH_TOKEN");
+                };
+                document.body.appendChild(btn);
             }
             // ----------------------------------------------
 
