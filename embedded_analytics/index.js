@@ -313,12 +313,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     dDefs[sortIdx].qDef.qSortCriterias = [{
                         qSortByAscii: currentSortOrder,
                         qSortByNumeric: currentSortOrder,
-                        qSortByLoadOrder: 1
+                        qSortByLoadOrder: 0 // FIXED: Must be 0 to allow interactive sort
                     }];
                 } else {
                     mDefs[sortIdx - 17].qSortBy = {
                         qSortByNumeric: currentSortOrder,
-                        qSortByLoadOrder: 1
+                        qSortByLoadOrder: 0 // FIXED: Must be 0
                     };
                 }
             }
