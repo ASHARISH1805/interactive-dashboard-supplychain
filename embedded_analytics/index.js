@@ -158,7 +158,17 @@ document.addEventListener('DOMContentLoaded', () => {
         'nav-overview': 'view-overview',
         'nav-sales': 'view-sales',
         'nav-shipping': 'view-shipping',
-        'nav-products': 'view-products'
+        'nav-products': 'view-products',
+        'nav-settings': 'view-settings' // Added Settings
+    };
+
+    // Map Nav IDs to Titles for Dynamic Header
+    const titles = {
+        'nav-overview': 'Overview|Supply Chain Key Performance Indicators',
+        'nav-sales': 'Sales Analysis|Revenue Trends & Customer Profitability',
+        'nav-shipping': 'Logistics Tower|Carrier Costs & Delivery Performance',
+        'nav-products': 'Product Intelligence|Category Performance & Stock Levels',
+        'nav-settings': 'System Settings|Configure Dashboard Preferences'
     };
 
     Object.keys(views).forEach(navId => {
@@ -169,27 +179,53 @@ document.addEventListener('DOMContentLoaded', () => {
                 document.querySelectorAll('.nav-link').forEach(n => n.classList.remove('active'));
                 el.classList.add('active');
 
-                // 2. Show Target Grid
-                document.querySelectorAll('.dashboard-grid').forEach(g => {
-                    // Don't hide the kpi-row if it's meant to be shared, but here we have specific grids
-                    if (g.id !== 'dashboard-kpi-grid') g.style.display = 'none';
-                });
-
-                // Hide ALL main grids first
+                // 2. Hide ALL Views
                 document.querySelectorAll('.view-section').forEach(v => v.style.display = 'none');
 
-                // Show Selected
+                // 3. Show Selected View
                 const targetId = views[navId];
                 const target = document.getElementById(targetId);
                 if (target) {
-                    target.style.display = 'grid'; // Grid layout
+                    target.style.display = navId === 'view-settings' ? 'block' : 'block';
+                    // Note: 'block' or 'grid' depending on internal structure. 
+                    // Our views have dashboard-grid inside them, so block is fine for the container.
+                    target.style.display = 'block';
+
                     log(`📱 Switched to View: ${targetId}`);
                     // Trigger resize for charts
                     window.dispatchEvent(new Event('resize'));
                 }
+
+                // 4. Update Header Title
+                if (titles[navId]) {
+                    const [main, sub] = titles[navId].split('|');
+                    document.getElementById('page-heading').innerText = main;
+                    document.querySelector('.page-title p').innerText = sub;
+                }
             });
         }
     });
+
+    // Dark Mode Toggle Logic
+    const themeToggle = document.getElementById('toggle-theme');
+    if (themeToggle) {
+        themeToggle.addEventListener('change', (e) => {
+            if (e.target.checked) {
+                document.documentElement.style.setProperty('--bg-color', '#121212');
+                document.documentElement.style.setProperty('--sidebar-bg', '#000000');
+                document.documentElement.style.setProperty('--card-bg', '#1E1E1E');
+                document.documentElement.style.setProperty('--text-primary', '#FFFFFF');
+                document.documentElement.style.setProperty('--text-secondary', '#AAAAAA');
+            } else {
+                // Reset to Light (approximate original values)
+                document.documentElement.style.setProperty('--bg-color', '#F7F7F7');
+                document.documentElement.style.setProperty('--sidebar-bg', '#333333');
+                document.documentElement.style.setProperty('--card-bg', '#FFFFFF');
+                document.documentElement.style.setProperty('--text-primary', '#1a1a1a');
+                document.documentElement.style.setProperty('--text-secondary', '#595959');
+            }
+        });
+    }
 });
 
 async function updateDashboard() {
