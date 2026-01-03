@@ -10,7 +10,7 @@ const CONFIG = {
 let app = null;
 
 function log(msg) {
-    const el = document.getElementById('debug-console');
+    const el = document.getElementById('ui-log'); // Changed to Sidebar Log
     if (el) { el.innerHTML += `> ${msg}<br>`; el.scrollTop = el.scrollHeight; }
     console.log(msg);
 }
