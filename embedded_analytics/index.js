@@ -323,6 +323,15 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // Brand Click -> Go to Intro
+    const brand = document.getElementById('brand-logo');
+    if (brand) {
+        brand.addEventListener('click', () => {
+            const introBtn = document.getElementById('nav-intro');
+            if (introBtn) introBtn.click();
+        });
+    }
+
     Object.keys(views).forEach(navId => {
         const el = document.getElementById(navId);
         if (el) {

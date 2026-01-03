@@ -415,9 +415,103 @@ input:checked+.slider:before {
     box-shadow: 0 0 0 3px rgba(0, 152, 69, 0.1);
 }
 
-.listening {
-    border-color: #D13438 !important;
-    color: #D13438 !important;
-    animation: pulse 1.5s infinite;
-    background: #FEF2F2 !important;
+/* CLICKABLE BRANDING */
+.brand-section {
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+.brand-section:hover {
+    color: var(--qlik-green);
+}
+
+/* MOBILE RESPONSIVE */
+@media screen and (max-width: 768px) {
+    body {
+        flex-direction: column;
+        /* Stack Sidebar over Content */
+    }
+
+    /* Sidebar becomes a top sticky header or simplified bar */
+    .sidebar {
+        width: 100%;
+        height: auto;
+        flex-direction: row;
+        overflow-x: auto;
+        /* Allow horizontal scroll for menu */
+        padding: 10px;
+        align-items: center;
+        border-right: none;
+        border-bottom: 1px solid #333;
+    }
+
+    .brand-section {
+        margin-bottom: 0;
+        margin-right: 20px;
+        font-size: 16px;
+    }
+
+    .nav-links {
+        flex-direction: row;
+        gap: 10px;
+        overflow-x: auto;
+    }
+
+    .nav-link {
+        padding: 8px 12px;
+        white-space: nowrap;
+        border-radius: 20px;
+        /* Pill shape on mobile */
+    }
+
+    .sidebar-footer {
+        display: none;
+    }
+
+    /* Hide footer on mobile */
+
+    /* Content Area */
+    .main-content {
+        padding: 0;
+    }
+
+    header.top-header {
+        padding: 15px;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 15px;
+    }
+
+    /* Grids Stack Vertically */
+    .dashboard-grid {
+        grid-template-columns: 1fr !important;
+        /* Force single column */
+        padding: 15px;
+        gap: 15px;
+    }
+
+    /* Spans become full width */
+    .span-1,
+    .span-2,
+    .span-3,
+    .span-4 {
+        grid-column: span 1 !important;
+    }
+
+    /* Chart Height adjustments */
+    .h-chart {
+        min-height: 350px;
+    }
+
+    /* Connection Bar */
+    .connection-bar {
+        font-size: 10px;
+        padding: 8px 15px;
+        flex-wrap: wrap;
+    }
+
+    /* AI View Adjustments */
+    #ai-input {
+        width: 100%;
+    }
 }

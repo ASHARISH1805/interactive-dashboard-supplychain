@@ -40,12 +40,17 @@ app.use(async (req, res, next) => {
 const apiRoutes = require('./routes/api');
 app.use('/api', apiRoutes);
 
-// Serve index.html for root route
+// Serve Qlik Dashboard at ROOT
+app.use(express.static(path.join(__dirname, 'embedded_analytics')));
+
+// Also serve public folder if needed (optional)
+app.use('/public', express.static(path.join(__dirname, 'public')));
+
 app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+    res.sendFile(path.join(__dirname, 'embedded_analytics', 'index.html'));
 });
 
-// Serve the Qlik Embedded Analytics demo
+// Backward compatibility (optional)
 app.use('/qlik', express.static(path.join(__dirname, 'embedded_analytics')));
 
 // Health check endpoint
