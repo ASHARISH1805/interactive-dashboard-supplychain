@@ -50,6 +50,13 @@ app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'embedded_analytics', 'index.html'));
 });
 
+// Fix for "Cannot GET /qlik/" error
+// Redirects old /qlik/ OAuth callbacks to Root (/) while KEEPING query params
+app.get('/qlik*', (req, res) => {
+    const query = req.url.includes('?') ? '?' + req.url.split('?')[1] : '';
+    res.redirect('/' + query);
+});
+
 // Health check endpoint
 app.get('/health', async (req, res) => {
     try {
