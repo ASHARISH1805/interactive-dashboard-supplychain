@@ -165,8 +165,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Auto Load Data when View Switched
     document.getElementById('nav-data').addEventListener('click', () => {
-        updateDataView(document.getElementById('data-limit').value);
+        const limitEl = document.getElementById('data-limit');
+        updateDataView(limitEl ? limitEl.value : 100);
     });
+
+    // Row Limit Change Listener
+    const limitDropdown = document.getElementById('data-limit');
+    if (limitDropdown) {
+        limitDropdown.addEventListener('change', function () {
+            log(`🔄 Limit changed to ${this.value}`);
+            updateDataView(this.value);
+        });
+    }
 
     // ... (Existing Event Listeners)
 
