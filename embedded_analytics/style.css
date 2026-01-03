@@ -432,36 +432,51 @@ input:checked+.slider:before {
         /* Stack Sidebar over Content */
     }
 
-    /* Sidebar becomes a top sticky header or simplified bar */
+    /* Sidebar becomes slim icon-only bar */
     .sidebar {
-        width: 100%;
-        height: auto;
-        flex-direction: row;
-        overflow-x: auto;
-        /* Allow horizontal scroll for menu */
-        padding: 10px;
-        align-items: center;
-        border-right: none;
-        border-bottom: 1px solid #333;
+        width: 60px;
+        height: 100vh;
+        flex-direction: column;
+        padding: 10px 0;
+        border-right: 1px solid #333;
+        border-bottom: none;
     }
 
     .brand-section {
-        margin-bottom: 0;
-        margin-right: 20px;
-        font-size: 16px;
+        margin-bottom: 15px;
+        margin-right: 0;
+        font-size: 0;
+        /* Hide text */
+        justify-content: center;
+        padding: 0 0 15px;
+    }
+
+    .brand-section span {
+        font-size: 24px;
     }
 
     .nav-links {
-        flex-direction: row;
-        gap: 10px;
-        overflow-x: auto;
+        flex-direction: column;
+        gap: 5px;
     }
 
     .nav-link {
-        padding: 8px 12px;
+        padding: 12px 0;
         white-space: nowrap;
-        border-radius: 20px;
-        /* Pill shape on mobile */
+        border-radius: 0;
+        font-size: 0;
+        /* Hide text */
+        justify-content: center;
+    }
+
+    .nav-link span {
+        font-size: 20px;
+        /* Show only icons */
+    }
+
+    .nav-link.active {
+        border-left: 3px solid var(--qlik-green);
+        padding-left: 0;
     }
 
     .sidebar-footer {
