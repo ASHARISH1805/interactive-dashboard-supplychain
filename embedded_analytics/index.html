@@ -210,12 +210,19 @@
                             <p style="color:#666; font-size:13px; margin-bottom:20px;">Ask questions in natural
                                 language. The system will auto-generate the optimal Qlik visualization.</p>
 
-                            <div style="display:flex; gap:10px; max-width:600px; margin:0 auto;">
+                            <div style="display:flex; gap:10px; max-width:600px; margin:0 auto; align-items:center;">
                                 <input type="text" id="ai-input"
                                     placeholder="e.g. 'Show me Sales by Region' or 'Analyze Profit vs Discount'"
                                     style="flex:1; padding:12px 20px; border:2px solid #e0e0e0; border-radius:8px; font-size:14px; outline:none; transition:0.3s;">
+
+                                <!-- VOICE BUTTON -->
+                                <button id="btn-mic" onclick="startVoice()" title="Speak Command"
+                                    style="background:white; border:2px solid #e0e0e0; border-radius:50%; width:46px; height:46px; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:0.2s;">
+                                    <span style="font-size:20px;">🎙️</span>
+                                </button>
+
                                 <button id="btn-ask-ai"
-                                    style="background:#009845; color:white; border:none; padding:0 25px; border-radius:8px; font-weight:600; cursor:pointer; transition:0.2s;">
+                                    style="background:#009845; color:white; border:none; padding:0 25px; border-radius:8px; font-weight:600; cursor:pointer; transition:0.2s; height:46px;">
                                     GENERATE
                                 </button>
                             </div>

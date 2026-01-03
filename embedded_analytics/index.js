@@ -195,6 +195,45 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
+    // VOICE RECOGNITION
+    window.startVoice = function () {
+        if (!('webkitSpeechRecognition' in window)) {
+            alert('Voice not supported in this browser. Try Chrome/Edge.');
+            return;
+        }
+
+        const micBtn = document.getElementById('btn-mic');
+        micBtn.classList.add('listening');
+
+        const recognition = new webkitSpeechRecognition();
+        recognition.lang = 'en-US';
+        recognition.interimResults = false;
+        recognition.maxAlternatives = 1;
+
+        recognition.onresult = function (event) {
+            const transcript = event.results[0][0].transcript;
+            log(`🎙️ Voice Command: "${transcript}"`);
+
+            const inp = document.getElementById('ai-input');
+            inp.value = transcript;
+
+            // Auto Submit
+            handleAIQuery(transcript);
+        };
+
+        recognition.onspeechend = function () {
+            recognition.stop();
+            micBtn.classList.remove('listening');
+        };
+
+        recognition.onerror = function (event) {
+            console.error('Voice Error', event.error);
+            micBtn.classList.remove('listening');
+        };
+
+        recognition.start();
+    };
+
     // ... (Existing Theme Logic)
 
     // ----------------------------------------------------

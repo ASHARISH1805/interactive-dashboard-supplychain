@@ -414,3 +414,10 @@ input:checked+.slider:before {
     border-color: var(--qlik-green) !important;
     box-shadow: 0 0 0 3px rgba(0, 152, 69, 0.1);
 }
+
+.listening {
+    border-color: #D13438 !important;
+    color: #D13438 !important;
+    animation: pulse 1.5s infinite;
+    background: #FEF2F2 !important;
+}
