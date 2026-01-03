@@ -11,22 +11,6 @@ async function init() {
         updateStatus('connected'); // ✅ Set Green Dot immediately on Socket Success
 
         log('🔄 Connected! Fetching Dashboard Data...');
-
-        // Safe Field Check
-        try {
-            log('📋 checking fields...');
-            const tables = await app.getTablesAndKeys({}, {}, 0, true, false);
-            if (tables && tables.tr) {
-                const fieldNames = tables.tr.flatMap(t => t.qFields.map(f => f.qName));
-                log('✅ Available Fields: ' + fieldNames.join(', '));
-            } else {
-                log('⚠️ No Tables found in App.');
-            }
-        } catch (fieldErr) {
-            log('⚠️ Could not fetch fields: ' + fieldErr.message);
-        }
-
-        log('🔄 Starting Dashboard Update...');
         await updateDashboard();
 
         // Bind Buttons (Safely)
@@ -190,9 +174,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // DATASET EXPLORER LOGIC
     // ----------------------------------------------------
     let dataModel = null;
-    let currentSortField = 'Row ID'; // Default logic name (mapped later)
+    let currentSortField = 'Row ID'; // Default Logical Name
     let currentSortOrder = 1;
-    let cachedFieldMap = null;
 
     // Exposed Sort Function
     window.sortData = function (field) {
@@ -206,49 +189,6 @@ document.addEventListener('DOMContentLoaded', () => {
         updateDataView(document.getElementById('data-limit').value);
     };
 
-    async function resolveFields() {
-        if (cachedFieldMap) return cachedFieldMap;
-        try {
-            const tables = await app.getTablesAndKeys({}, {}, 0, true, false);
-            // If API fails or returns no tables, we return null to trigger fallback
-            if (!tables || !tables.tr || tables.tr.length === 0) {
-                console.warn("Smart Resolve: No tables found. Using Fallback.");
-                return null;
-            }
-
-            const available = tables.tr.flatMap(t => t.qFields.map(f => f.qName));
-
-            // Map Logical Name -> Actual Field Name (Case Insensitive Match)
-            const targets = [
-                'Row ID', 'Order ID', 'Order Date', 'Ship Date', 'Ship Mode',
-                'Customer ID', 'Customer Name', 'Segment', 'Country', 'City',
-                'State', 'Postal Code', 'Region', 'Product ID', 'Category',
-                'Sub-Category', 'Product Name', 'Sales', 'Quantity', 'Discount', 'Profit', 'Shipping Cost'
-            ];
-
-            const map = {};
-            targets.forEach(t => {
-                // Try 1: Exact Match
-                let found = available.find(a => a === t);
-                // Try 2: Snake Case (row_id matching Row ID)
-                if (!found) found = available.find(a => a.toLowerCase() === t.toLowerCase().replace(/ /g, '_'));
-                // Try 3: No Space (RowID matching Row ID)
-                if (!found) found = available.find(a => a.toLowerCase() === t.toLowerCase().replace(/ /g, ''));
-                // Try 4: Lowercase match
-                if (!found) found = available.find(a => a.toLowerCase() === t.toLowerCase());
-
-                map[t] = found || null;
-            });
-
-            cachedFieldMap = map;
-            log('✅ Fields Resolved: ' + Object.keys(map).length);
-            return map;
-        } catch (e) {
-            console.error("Field Resolution Failed", e);
-            return null;
-        }
-    }
-
     async function updateDataView(limit) {
         if (!app) return;
         limit = parseInt(limit) || 100;
@@ -257,55 +197,37 @@ document.addEventListener('DOMContentLoaded', () => {
         tbody.innerHTML = '<tr><td colspan="21" style="text-align:center; padding:20px; color:#aaa;">Fetching Records...</td></tr>';
 
         try {
-            let fieldMap = await resolveFields();
-
-            // FALLBACK MECHANISM: If Auto-Detect fails, use 'Title Case' (Superstore Standard)
-            if (!fieldMap) {
-                log("⚠️ Smart Resolve failed. Using 'Title Case' defaults.");
-                fieldMap = {
-                    'Row ID': 'Row ID', 'Order ID': 'Order ID', 'Order Date': 'Order Date',
-                    'Ship Date': 'Ship Date', 'Ship Mode': 'Ship Mode', 'Customer ID': 'Customer ID',
-                    'Customer Name': 'Customer Name', 'Segment': 'Segment', 'Country': 'Country',
-                    'City': 'City', 'State': 'State', 'Postal Code': 'Postal Code',
-                    'Region': 'Region', 'Product ID': 'Product ID', 'Category': 'Category',
-                    'Sub-Category': 'Sub-Category', 'Product Name': 'Product Name',
-                    'Sales': 'Sales', 'Quantity': 'Quantity', 'Discount': 'Discount', 'Profit': 'Profit', 'Shipping Cost': 'Shipping Cost'
-                };
-            }
-
             log(`💾 Fetching Top ${limit} Rows (Sorted by ${currentSortField})...`);
 
-            const getFD = (logicalName) => {
-                let actual = fieldMap[logicalName];
-                // Extra fallback if a specific KEY is missing from map
-                if (!actual) actual = logicalName.toLowerCase().replace(/ /g, '_');
-                return { qFieldDefs: [actual] };
-            };
-
-            const getM = (logicalName, agg) => {
-                let actual = fieldMap[logicalName];
-                if (!actual) actual = logicalName.toLowerCase();
-                return `${agg}([${actual}])`;
-            };
-
-            // Dimension Defs (0-16)
+            // HARDCODED STANDARD FIELDS (Title Case with Brackets for Safety)
+            // This avoids "Smart Resolve" errors and forces the standard Qlik schema.
             const dNames = [
-                'Row ID', 'Order ID', 'Order Date', 'Ship Date', 'Ship Mode',
-                'Customer ID', 'Customer Name', 'Segment', 'Country', 'City',
-                'State', 'Postal Code', 'Region', 'Product ID', 'Category', 'Sub-Category', 'Product Name'
+                '[Row ID]', '[Order ID]', '[Order Date]', '[Ship Date]', '[Ship Mode]',
+                '[Customer ID]', '[Customer Name]', '[Segment]', '[Country]', '[City]',
+                '[State]', '[Postal Code]', '[Region]', '[Product ID]', '[Category]', '[Sub-Category]', '[Product Name]'
             ];
-            const dDefs = dNames.map(name => ({ qDef: getFD(name) }));
+            const dDefs = dNames.map(name => ({ qDef: { qFieldDefs: [name] } }));
 
             // Measure Defs (17-20)
             const mDefs = [
-                { qDef: { qDef: getM('Sales', 'Sum'), qLabel: 'Sales' } },
-                { qDef: { qDef: getM('Quantity', 'Sum'), qLabel: 'Quantity' } },
-                { qDef: { qDef: getM('Discount', 'Avg'), qLabel: 'Discount' } },
-                { qDef: { qDef: getM('Profit', 'Sum'), qLabel: 'Profit' } }
+                { qDef: { qDef: 'Sum([Sales])', qLabel: 'Sales' } },
+                { qDef: { qDef: 'Sum([Quantity])', qLabel: 'Quantity' } },
+                { qDef: { qDef: 'Avg([Discount])', qLabel: 'Discount' } },
+                { qDef: { qDef: 'Sum([Profit])', qLabel: 'Profit' } }
             ];
 
-            const allCols = [...dNames, 'Sales', 'Quantity', 'Discount', 'Profit'];
-            const sortIdx = allCols.indexOf(currentSortField);
+            // Mapping for Sort Index Finding
+            const allCols = [
+                'Row ID', 'Order ID', 'Order Date', 'Ship Date', 'Ship Mode',
+                'Customer ID', 'Customer Name', 'Segment', 'Country', 'City',
+                'State', 'Postal Code', 'Region', 'Product ID', 'Category',
+                'Sub-Category', 'Product Name', 'Sales', 'Quantity', 'Discount', 'Profit'
+            ];
+
+            // Allow matching "Sales" or "[Sales]" or "sales"
+            const sortIdx = allCols.findIndex(c =>
+                c.toLowerCase() === currentSortField.toLowerCase().replace(/\[|\]/g, '')
+            );
 
             // Apply Sort
             if (sortIdx !== -1) {
@@ -313,12 +235,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     dDefs[sortIdx].qDef.qSortCriterias = [{
                         qSortByAscii: currentSortOrder,
                         qSortByNumeric: currentSortOrder,
-                        qSortByLoadOrder: 0 // FIXED: Must be 0 to allow interactive sort
+                        qSortByLoadOrder: 0 // MUST BE 0 to allow interactive sort
                     }];
                 } else {
                     mDefs[sortIdx - 17].qSortBy = {
                         qSortByNumeric: currentSortOrder,
-                        qSortByLoadOrder: 0 // FIXED: Must be 0
+                        qSortByLoadOrder: 0 // MUST BE 0 to allow interactive sort
                     };
                 }
             }
