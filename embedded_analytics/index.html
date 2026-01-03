@@ -39,9 +39,7 @@
                 <div class="nav-link" id="nav-products">
                     <span>📦</span> Products
                 </div>
-                <div class="nav-link" id="nav-data">
-                    <span>💾</span> Dataset Explorer
-                </div>
+                <!-- NAV DATA REMOVED -->
                 <div class="nav-link" id="nav-settings">
                     <span>⚙️</span> Settings
                 </div>
@@ -253,88 +251,7 @@
                     </script>
                 </div>
 
-                <!-- 0.6 DATASET EXPLORER VIEW -->
-                <div id="view-data" class="view-section" style="display:none;">
-                    <div class="card span-4" style="min-height:600px; display:flex; flex-direction:column;">
-
-                        <!-- DATA CONTROLS -->
-                        <div
-                            style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; padding-bottom:15px; border-bottom:1px solid #eee;">
-                            <div style="display:flex; align-items:center; gap:10px;">
-                                <span style="font-size:13px; font-weight:600; color:#555;">SHOW ROWS:</span>
-                                <select id="data-limit" onchange="updateDataView(this.value)"
-                                    style="padding:4px 8px; border:1px solid #ccc; border-radius:4px; font-size:12px;">
-                                    <option value="10">Top 10</option>
-                                    <option value="50">Top 50</option>
-                                    <option value="100">Top 100</option>
-                                    <option value="500">Top 500</option>
-                                </select>
-                            </div>
-                            <div>
-                                <span style="font-size:12px; color:#aaa;">* Data reflects current selections</span>
-                            </div>
-                        </div>
-
-                        <!-- DATA TABLE -->
-                        <div style="flex:1; overflow:auto;">
-                            <table class="qlik-table" style="width:100%; border-collapse:collapse; font-size:12px;">
-                                <thead style="position:sticky; top:0; background:#f9f9f9; z-index:1;">
-                                    <tr style="text-align:left; color:#666; white-space:nowrap;">
-                                        <th style="padding:10px; border-bottom:2px solid #ddd; cursor:pointer;"
-                                            onclick="sortData('row_id')">Row ID ⇅</th>
-                                        <th style="padding:10px; border-bottom:2px solid #ddd; cursor:pointer;"
-                                            onclick="sortData('order_id')">Order ID ⇅</th>
-                                        <th style="padding:10px; border-bottom:2px solid #ddd; cursor:pointer;"
-                                            onclick="sortData('order_date')">Order Date ⇅</th>
-                                        <th style="padding:10px; border-bottom:2px solid #ddd; cursor:pointer;"
-                                            onclick="sortData('ship_date')">Ship Date ⇅</th>
-                                        <th style="padding:10px; border-bottom:2px solid #ddd; cursor:pointer;"
-                                            onclick="sortData('ship_mode')">Ship Mode ⇅</th>
-                                        <th style="padding:10px; border-bottom:2px solid #ddd; cursor:pointer;"
-                                            onclick="sortData('customer_id')">Customer ID ⇅</th>
-                                        <th style="padding:10px; border-bottom:2px solid #ddd; cursor:pointer;"
-                                            onclick="sortData('customer_name')">Customer Name ⇅</th>
-                                        <th style="padding:10px; border-bottom:2px solid #ddd; cursor:pointer;"
-                                            onclick="sortData('segment')">Segment ⇅</th>
-                                        <th style="padding:10px; border-bottom:2px solid #ddd; cursor:pointer;"
-                                            onclick="sortData('country')">Country ⇅</th>
-                                        <th style="padding:10px; border-bottom:2px solid #ddd; cursor:pointer;"
-                                            onclick="sortData('city')">City ⇅</th>
-                                        <th style="padding:10px; border-bottom:2px solid #ddd; cursor:pointer;"
-                                            onclick="sortData('state')">State ⇅</th>
-                                        <th style="padding:10px; border-bottom:2px solid #ddd; cursor:pointer;"
-                                            onclick="sortData('postal_code')">Postal Code ⇅</th>
-                                        <th style="padding:10px; border-bottom:2px solid #ddd; cursor:pointer;"
-                                            onclick="sortData('region')">Region ⇅</th>
-                                        <th style="padding:10px; border-bottom:2px solid #ddd; cursor:pointer;"
-                                            onclick="sortData('product_id')">Product ID ⇅</th>
-                                        <th style="padding:10px; border-bottom:2px solid #ddd; cursor:pointer;"
-                                            onclick="sortData('category')">Category ⇅</th>
-                                        <th style="padding:10px; border-bottom:2px solid #ddd; cursor:pointer;"
-                                            onclick="sortData('sub_category')">Sub-Category ⇅</th>
-                                        <th style="padding:10px; border-bottom:2px solid #ddd; cursor:pointer;"
-                                            onclick="sortData('product_name')">Product Name ⇅</th>
-                                        <th style="padding:10px; border-bottom:2px solid #ddd; cursor:pointer; text-align:right;"
-                                            onclick="sortData('sales')">Sales ⇅</th>
-                                        <th style="padding:10px; border-bottom:2px solid #ddd; cursor:pointer; text-align:right;"
-                                            onclick="sortData('quantity')">Quantity ⇅</th>
-                                        <th style="padding:10px; border-bottom:2px solid #ddd; cursor:pointer; text-align:center;"
-                                            onclick="sortData('discount')">Discount ⇅</th>
-                                        <th style="padding:10px; border-bottom:2px solid #ddd; cursor:pointer; text-align:right;"
-                                            onclick="sortData('profit')">Profit ⇅</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="data-table-body" style="color:#333;">
-                                    <!-- ROWS INJECTED BY JS -->
-                                    <tr>
-                                        <td colspan="8" style="text-align:center; padding:20px; color:#aaa;">Loading
-                                            Data...</td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
+                <!-- DATASET EXPLORER REMOVED -->
 
                 <!-- 1. OVERVIEW VIEW -->
                 <div id="view-overview" class="view-section">
