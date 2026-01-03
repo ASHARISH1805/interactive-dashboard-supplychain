@@ -259,17 +259,17 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             let fieldMap = await resolveFields();
 
-            // FALLBACK MECHANISM: If Auto-Detect fails, use 'snake_case' which we know works.
+            // FALLBACK MECHANISM: If Auto-Detect fails, use 'Title Case' (Superstore Standard)
             if (!fieldMap) {
-                log("⚠️ Smart Resolve failed. Using 'snake_case' defaults.");
+                log("⚠️ Smart Resolve failed. Using 'Title Case' defaults.");
                 fieldMap = {
-                    'Row ID': 'row_id', 'Order ID': 'order_id', 'Order Date': 'order_date',
-                    'Ship Date': 'ship_date', 'Ship Mode': 'ship_mode', 'Customer ID': 'customer_id',
-                    'Customer Name': 'customer_name', 'Segment': 'segment', 'Country': 'country',
-                    'City': 'city', 'State': 'state', 'Postal Code': 'postal_code',
-                    'Region': 'region', 'Product ID': 'product_id', 'Category': 'category',
-                    'Sub-Category': 'sub_category', 'Product Name': 'product_name',
-                    'Sales': 'sales', 'Quantity': 'quantity', 'Discount': 'discount', 'Profit': 'profit', 'Shipping Cost': 'shipping_cost'
+                    'Row ID': 'Row ID', 'Order ID': 'Order ID', 'Order Date': 'Order Date',
+                    'Ship Date': 'Ship Date', 'Ship Mode': 'Ship Mode', 'Customer ID': 'Customer ID',
+                    'Customer Name': 'Customer Name', 'Segment': 'Segment', 'Country': 'Country',
+                    'City': 'City', 'State': 'State', 'Postal Code': 'Postal Code',
+                    'Region': 'Region', 'Product ID': 'Product ID', 'Category': 'Category',
+                    'Sub-Category': 'Sub-Category', 'Product Name': 'Product Name',
+                    'Sales': 'Sales', 'Quantity': 'Quantity', 'Discount': 'Discount', 'Profit': 'Profit', 'Shipping Cost': 'Shipping Cost'
                 };
             }
 
