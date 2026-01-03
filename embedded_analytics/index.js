@@ -210,6 +210,12 @@ document.addEventListener('DOMContentLoaded', () => {
         if (cachedFieldMap) return cachedFieldMap;
         try {
             const tables = await app.getTablesAndKeys({}, {}, 0, true, false);
+            // If API fails or returns no tables, we return null to trigger fallback
+            if (!tables || !tables.tr || tables.tr.length === 0) {
+                console.warn("Smart Resolve: No tables found. Using Fallback.");
+                return null;
+            }
+
             const available = tables.tr.flatMap(t => t.qFields.map(f => f.qName));
 
             // Map Logical Name -> Actual Field Name (Case Insensitive Match)
@@ -225,18 +231,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Try 1: Exact Match
                 let found = available.find(a => a === t);
                 // Try 2: Snake Case (row_id matching Row ID)
-                if (!found) found = available.find(a => a.toLowerCase() === t.toLowerCase().replace(' ', '_'));
+                if (!found) found = available.find(a => a.toLowerCase() === t.toLowerCase().replace(/ /g, '_'));
                 // Try 3: No Space (RowID matching Row ID)
-                if (!found) found = available.find(a => a.toLowerCase() === t.toLowerCase().replace(' ', ''));
+                if (!found) found = available.find(a => a.toLowerCase() === t.toLowerCase().replace(/ /g, ''));
                 // Try 4: Lowercase match
                 if (!found) found = available.find(a => a.toLowerCase() === t.toLowerCase());
 
                 map[t] = found || null;
-                if (!found) console.warn(`⚠️ Could not resolve field: ${t}`);
             });
 
             cachedFieldMap = map;
-            log('✅ Fields Resolved: ' + JSON.stringify(map));
+            log('✅ Fields Resolved: ' + Object.keys(map).length);
             return map;
         } catch (e) {
             console.error("Field Resolution Failed", e);
@@ -252,19 +257,35 @@ document.addEventListener('DOMContentLoaded', () => {
         tbody.innerHTML = '<tr><td colspan="21" style="text-align:center; padding:20px; color:#aaa;">Fetching Records...</td></tr>';
 
         try {
-            const fieldMap = await resolveFields();
-            if (!fieldMap) throw new Error("Could not resolve dataset fields. Check log.");
+            let fieldMap = await resolveFields();
+
+            // FALLBACK MECHANISM: If Auto-Detect fails, use 'snake_case' which we know works.
+            if (!fieldMap) {
+                log("⚠️ Smart Resolve failed. Using 'snake_case' defaults.");
+                fieldMap = {
+                    'Row ID': 'row_id', 'Order ID': 'order_id', 'Order Date': 'order_date',
+                    'Ship Date': 'ship_date', 'Ship Mode': 'ship_mode', 'Customer ID': 'customer_id',
+                    'Customer Name': 'customer_name', 'Segment': 'segment', 'Country': 'country',
+                    'City': 'city', 'State': 'state', 'Postal Code': 'postal_code',
+                    'Region': 'region', 'Product ID': 'product_id', 'Category': 'category',
+                    'Sub-Category': 'sub_category', 'Product Name': 'product_name',
+                    'Sales': 'sales', 'Quantity': 'quantity', 'Discount': 'discount', 'Profit': 'profit', 'Shipping Cost': 'shipping_cost'
+                };
+            }
 
             log(`💾 Fetching Top ${limit} Rows (Sorted by ${currentSortField})...`);
 
             const getFD = (logicalName) => {
-                const actual = fieldMap[logicalName];
-                return actual ? { qFieldDefs: [actual] } : { qDef: "''" };
+                let actual = fieldMap[logicalName];
+                // Extra fallback if a specific KEY is missing from map
+                if (!actual) actual = logicalName.toLowerCase().replace(/ /g, '_');
+                return { qFieldDefs: [actual] };
             };
 
             const getM = (logicalName, agg) => {
-                const actual = fieldMap[logicalName];
-                return actual ? `${agg}([${actual}])` : '0';
+                let actual = fieldMap[logicalName];
+                if (!actual) actual = logicalName.toLowerCase();
+                return `${agg}([${actual}])`;
             };
 
             // Dimension Defs (0-16)
