@@ -155,7 +155,8 @@ function updateSelectionBar(field, value) {
 // NAVIGATION LOGIC
 document.addEventListener('DOMContentLoaded', () => {
     const views = {
-        'nav-intro': 'view-intro',  // Added Intro
+        'nav-intro': 'view-intro',
+        'nav-ai': 'view-ai', // Added AI View
         'nav-overview': 'view-overview',
         'nav-sales': 'view-sales',
         'nav-shipping': 'view-shipping',
@@ -166,12 +167,122 @@ document.addEventListener('DOMContentLoaded', () => {
     // Map Nav IDs to Titles for Dynamic Header
     const titles = {
         'nav-intro': 'Project Architecture|Dataset Specifications & Analytical Strategy',
+        'nav-ai': 'AI Analyst|Natural Language Query Engine',
         'nav-overview': 'Overview|Supply Chain Key Performance Indicators',
         'nav-sales': 'Sales Analysis|Revenue Trends & Customer Profitability',
         'nav-shipping': 'Logistics Tower|Carrier Costs & Delivery Performance',
         'nav-products': 'Product Intelligence|Category Performance & Stock Levels',
         'nav-settings': 'System Settings|Configure Dashboard Preferences'
     };
+
+    // ... (Existing Loop for Views) -> This remains unchanged by just editing the object above
+
+    // AI BUTTON LISTENER
+    const btnAsk = document.getElementById('btn-ask-ai');
+    if (btnAsk) {
+        btnAsk.addEventListener('click', () => {
+            const val = document.getElementById('ai-input').value;
+            if (val) handleAIQuery(val);
+        });
+    }
+
+    // Expose helper for pills
+    window.setAsk = function (txt) {
+        const inp = document.getElementById('ai-input');
+        if (inp) {
+            inp.value = txt;
+            handleAIQuery(txt);
+        }
+    };
+
+    // ... (Existing Theme Logic)
+
+    // ----------------------------------------------------
+    // AI QUERY ENGINE
+    // ----------------------------------------------------
+    let chartAI = null;
+
+    async function handleAIQuery(text) {
+        const loading = document.getElementById('ai-loading');
+        const resultCard = document.getElementById('ai-result-card');
+        const titleEl = document.getElementById('ai-chart-title');
+
+        // UI Loading State
+        loading.style.display = 'block';
+        resultCard.style.display = 'none';
+
+        // 1. PARSE INTENT (Simple Keyword Matching)
+        text = text.toLowerCase();
+
+        // Detect Measure
+        let qMeasure = { qDef: 'Sum(sales)', label: 'Sales' }; // Default
+        if (text.includes('profit')) qMeasure = { qDef: 'Sum(profit)', label: 'Profit' };
+        else if (text.includes('discount')) qMeasure = { qDef: 'Avg(discount)', label: 'Avg Discount' };
+        else if (text.includes('shipping') || text.includes('cost')) qMeasure = { qDef: 'Sum(shipping_cost)', label: 'Shipping Cost' };
+        else if (text.includes('quantity')) qMeasure = { qDef: 'Sum(quantity)', label: 'Quantity' };
+
+        // Detect Dimension
+        let qDim = { qField: 'region', label: 'Region' }; // Default
+        if (text.includes('category')) qDim = { qField: 'category', label: 'Category' };
+        else if (text.includes('segment')) qDim = { qField: 'segment', label: 'Segment' };
+        else if (text.includes('ship mode') || text.includes('mode')) qDim = { qField: 'ship_mode', label: 'Ship Mode' };
+        else if (text.includes('customer')) qDim = { qField: 'customer_name', label: 'Customer' };
+        else if (text.includes('state')) qDim = { qField: 'state', label: 'State' };
+
+        log(`🤖 AI Interpreted: ${qMeasure.label} by ${qDim.label}`);
+        titleEl.innerText = `Generated Analysis: ${qMeasure.label} by ${qDim.label}`;
+
+        // 2. GENERATE HYPERCUBE
+        try {
+            const aiModel = await app.createSessionObject({
+                qInfo: { qType: 'chart' },
+                qHyperCubeDef: {
+                    qDimensions: [{ qDef: { qFieldDefs: [qDim.qField] } }],
+                    qMeasures: [{ qDef: { qDef: qMeasure.qDef } }],
+                    qInitialDataFetch: [{ qTop: 0, qLeft: 0, qWidth: 2, qHeight: 50 }]
+                }
+            });
+
+            const layout = await aiModel.getLayout();
+            const data = layout.qHyperCube.qDataPages[0].qMatrix.map(r => ({
+                label: r[0].qText,
+                value: r[1].qNum
+            }));
+
+            // 3. RENDER CHART
+            loading.style.display = 'none';
+            resultCard.style.display = 'block';
+
+            const ctx = document.getElementById('chart-ai');
+            if (chartAI) chartAI.destroy();
+
+            chartAI = new Chart(ctx, {
+                type: 'bar', // Dynamic capability possible, but Bar is safest for aggregation
+                data: {
+                    labels: data.map(d => d.label),
+                    datasets: [{
+                        label: qMeasure.label,
+                        data: data.map(d => d.value),
+                        backgroundColor: '#009845',
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } }, // Clean look
+                    scales: {
+                        y: { beginAtZero: true, grid: { color: '#f0f0f0' } },
+                        x: { grid: { display: false } }
+                    }
+                }
+            });
+
+        } catch (e) {
+            log('❌ AI Generation Failed: ' + e.message);
+            loading.style.display = 'none';
+        }
+    }
 
     Object.keys(views).forEach(navId => {
         const el = document.getElementById(navId);

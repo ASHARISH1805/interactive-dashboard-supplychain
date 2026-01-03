@@ -392,3 +392,25 @@ input:checked+.slider:before {
     color: #0078D4;
     border-color: #B3D6F2;
 }
+
+@keyframes pulse {
+    0% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(0, 152, 69, 0.7);
+    }
+
+    70% {
+        transform: scale(1);
+        box-shadow: 0 0 0 10px rgba(0, 152, 69, 0);
+    }
+
+    100% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(0, 152, 69, 0);
+    }
+}
+
+#ai-input:focus {
+    border-color: var(--qlik-green) !important;
+    box-shadow: 0 0 0 3px rgba(0, 152, 69, 0.1);
+}

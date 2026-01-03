@@ -24,6 +24,9 @@
                 <div class="nav-link" id="nav-intro">
                     <span>📘</span> Project Guide
                 </div>
+                <div class="nav-link" id="nav-ai">
+                    <span>🤖</span> Ask AI Analyst
+                </div>
                 <div class="nav-link active" id="nav-overview">
                     <span>📊</span> Overview
                 </div>
@@ -194,6 +197,66 @@
                         </div>
 
                     </div>
+                </div>
+
+                <!-- 0.5 AI ANALYST VIEW -->
+                <div id="view-ai" class="view-section" style="display:none;">
+                    <div style="max-width:800px; margin:0 auto; padding:20px;">
+
+                        <!-- AI INPUT -->
+                        <div
+                            style="background:white; padding:30px; border-radius:12px; box-shadow:0 4px 12px rgba(0,0,0,0.1); text-align:center;">
+                            <h2 style="color:#333; margin-bottom:10px;">🤖 Artificial Intelligence Analyst</h2>
+                            <p style="color:#666; font-size:13px; margin-bottom:20px;">Ask questions in natural
+                                language. The system will auto-generate the optimal Qlik visualization.</p>
+
+                            <div style="display:flex; gap:10px; max-width:600px; margin:0 auto;">
+                                <input type="text" id="ai-input"
+                                    placeholder="e.g. 'Show me Sales by Region' or 'Analyze Profit vs Discount'"
+                                    style="flex:1; padding:12px 20px; border:2px solid #e0e0e0; border-radius:8px; font-size:14px; outline:none; transition:0.3s;">
+                                <button id="btn-ask-ai"
+                                    style="background:#009845; color:white; border:none; padding:0 25px; border-radius:8px; font-weight:600; cursor:pointer; transition:0.2s;">
+                                    GENERATE
+                                </button>
+                            </div>
+
+                            <!-- SUGGESTIONS -->
+                            <div style="margin-top:15px; display:flex; justify-content:center; gap:8px;">
+                                <span class="pill-badge blue" style="cursor:pointer;"
+                                    onclick="setAsk('Sales by Category')">Sales by Category</span>
+                                <span class="pill-badge green" style="cursor:pointer;"
+                                    onclick="setAsk('Profit across Regions')">Profit across Regions</span>
+                                <span class="pill-badge red" style="cursor:pointer;"
+                                    onclick="setAsk('Shipping Cost by Ship Mode')">Shipping Cost by Ship Mode</span>
+                            </div>
+                        </div>
+
+                        <!-- RESULTS AREA -->
+                        <div id="ai-loading" style="display:none; text-align:center; margin-top:40px; color:#666;">
+                            <div class="dot ok" style="display:inline-block; animation: pulse 1s infinite;"></div>
+                            Thinking...
+                        </div>
+
+                        <div id="ai-result-card" class="card" style="margin-top:20px; min-height:400px; display:none;">
+                            <div class="card-title">
+                                <span id="ai-chart-title">Visual Answer</span>
+                                <span
+                                    style="font-size:10px; background:#e0e0e0; padding:2px 6px; border-radius:4px;">GENERATED
+                                    BY OIKOS ENGINE</span>
+                            </div>
+                            <div class="chart-container">
+                                <canvas id="chart-ai"></canvas>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <script>
+                        function setAsk(txt) {
+                            document.getElementById('ai-input').value = txt;
+                            document.getElementById('btn-ask-ai').click();
+                        }
+                    </script>
                 </div>
 
                 <!-- 1. OVERVIEW VIEW -->
