@@ -156,7 +156,8 @@ function updateSelectionBar(field, value) {
 document.addEventListener('DOMContentLoaded', () => {
     const views = {
         'nav-intro': 'view-intro',
-        'nav-ai': 'view-ai', // Added AI View
+        'nav-ai': 'view-ai',
+        'nav-data': 'view-data', // Added Data View
         'nav-overview': 'view-overview',
         'nav-sales': 'view-sales',
         'nav-shipping': 'view-shipping',
@@ -168,12 +169,86 @@ document.addEventListener('DOMContentLoaded', () => {
     const titles = {
         'nav-intro': 'Project Architecture|Dataset Specifications & Analytical Strategy',
         'nav-ai': 'AI Analyst|Natural Language Query Engine',
+        'nav-data': 'Dataset Explorer|Raw Transactional Data & Filters',
         'nav-overview': 'Overview|Supply Chain Key Performance Indicators',
         'nav-sales': 'Sales Analysis|Revenue Trends & Customer Profitability',
         'nav-shipping': 'Logistics Tower|Carrier Costs & Delivery Performance',
         'nav-products': 'Product Intelligence|Category Performance & Stock Levels',
         'nav-settings': 'System Settings|Configure Dashboard Preferences'
     };
+
+    // ... (Existing Loop)
+
+    // Auto Load Data when View Switched
+    document.getElementById('nav-data').addEventListener('click', () => {
+        updateDataView(document.getElementById('data-limit').value);
+    });
+
+    // ... (Existing Event Listeners)
+
+    // ----------------------------------------------------
+    // DATASET EXPLORER LOGIC
+    // ----------------------------------------------------
+    let dataModel = null;
+
+    async function updateDataView(limit) {
+        if (!app) return;
+        limit = parseInt(limit) || 50;
+
+        const tbody = document.getElementById('data-table-body');
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; padding:20px; color:#aaa;">Fetching Records...</td></tr>';
+
+        try {
+            log(`💾 Fetching Top ${limit} Rows...`);
+
+            // Create Table HyperCube
+            dataModel = await app.createSessionObject({
+                qInfo: { qType: 'table' },
+                qHyperCubeDef: {
+                    qDimensions: [
+                        { qDef: { qFieldDefs: ['order_date'] } },
+                        { qDef: { qFieldDefs: ['customer_name'] } },
+                        { qDef: { qFieldDefs: ['region'] } },
+                        { qDef: { qFieldDefs: ['category'] } },
+                        { qDef: { qFieldDefs: ['product_name'] } }
+                    ],
+                    qMeasures: [
+                        { qDef: { qDef: 'Sum(sales)' } },
+                        { qDef: { qDef: 'Sum(profit)' } },
+                        { qDef: { qDef: 'Avg(discount)' } }
+                    ],
+                    qInitialDataFetch: [{ qTop: 0, qLeft: 0, qWidth: 8, qHeight: limit }]
+                }
+            });
+
+            const rows = (await dataModel.getLayout()).qHyperCube.qDataPages[0].qMatrix;
+
+            let html = '';
+            rows.forEach(r => {
+                const profit = r[6].qNum;
+                const profitColor = profit < 0 ? '#D13438' : '#009845';
+
+                html += `
+                <tr style="border-bottom:1px solid #eee;">
+                    <td style="padding:8px;">${r[0].qText}</td>
+                    <td style="padding:8px; font-weight:500;">${r[1].qText}</td>
+                    <td style="padding:8px;">${r[2].qText}</td>
+                    <td style="padding:8px;">${r[3].qText}</td>
+                    <td style="padding:8px; width:250px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${r[4].qText}">${r[4].qText}</td>
+                    <td style="padding:8px; text-align:right;">${r[5].qText}</td>
+                    <td style="padding:8px; text-align:right; color:${profitColor}; font-weight:bold;">${r[6].qText}</td>
+                    <td style="padding:8px; text-align:center;">${(r[7].qNum * 100).toFixed(0)}%</td>
+                </tr>
+            `;
+            });
+
+            tbody.innerHTML = html;
+
+        } catch (e) {
+            tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; color:red;">Error: ${e.message}</td></tr>`;
+            console.error(e);
+        }
+    }
 
     // ... (Existing Loop for Views) -> This remains unchanged by just editing the object above
 

@@ -36,6 +36,15 @@
                 <div class="nav-link" id="nav-shipping">
                     <span>🚚</span> Shipping
                 </div>
+                <div class="nav-link" id="nav-ai">
+                    <span>🤖</span> Ask AI Analyst
+                </div>
+                <div class="nav-link" id="nav-data">
+                    <span>💾</span> Dataset Explorer
+                </div>
+                <div class="nav-link active" id="nav-overview">
+                    <span>📊</span> Overview
+                </div>
                 <div class="nav-link" id="nav-products">
                     <span>📦</span> Products
                 </div>
@@ -44,7 +53,6 @@
                 </div>
             </nav>
             <div class="sidebar-footer">
-                <div style="font-size:10px; opacity:0.7;">v3.0.0 Real-time Data</div>
                 <!-- LOG CONTAINER -->
                 <div id="ui-log"
                     style="font-family:monospace; font-size:10px; color:#aaa; margin-top:10px; max-height:100px; overflow-y:auto; word-break:break-all;">
@@ -61,27 +69,12 @@
                     <p>Supply Chain Key Performance Indicators</p>
                 </div>
                 <div class="header-actions">
-                    <!-- QLIK SELECTIONS BAR -->
+                    <!-- CLEAR SELECTIONS BUTTON ONLY -->
                     <div style="display:flex; gap:10px; align-items:center;">
-                        <span style="font-size:12px; font-weight:600; color:#555;">FILTERS:</span>
-                        <div class="selection-pill" onclick="document.getElementById('btn-west').click()"
-                            style="cursor:pointer; background:#e0e0e0; padding:4px 8px; border-radius:4px; font-size:12px;">
-                            Region: West
-                        </div>
-                        <div class="selection-pill" onclick="document.getElementById('btn-east').click()"
-                            style="cursor:pointer; background:#e0e0e0; padding:4px 8px; border-radius:4px; font-size:12px;">
-                            Region: East
-                        </div>
-                        <div class="selection-pill" onclick="document.getElementById('btn-clear').click()"
-                            style="cursor:pointer; background:#fff; border:1px solid #ccc; padding:4px 8px; border-radius:4px; font-size:12px;">
-                            Clear
-                        </div>
-                    </div>
-                    <!-- Hidden Logic Buttons -->
-                    <div style="display:none;">
-                        <button id="btn-west">W</button>
-                        <button id="btn-east">E</button>
-                        <button id="btn-clear">C</button>
+                        <button onclick="if(app) app.clearAll()"
+                            style="background:white; border:1px solid #ccc; padding:6px 12px; border-radius:6px; font-size:12px; cursor:pointer; color:#333; display:flex; align-items:center; gap:5px;">
+                            <span>✖</span> Clear Filters
+                        </button>
                     </div>
                 </div>
             </header>
@@ -266,6 +259,58 @@
                     </script>
                 </div>
 
+                <!-- 0.6 DATASET EXPLORER VIEW -->
+                <div id="view-data" class="view-section" style="display:none;">
+                    <div class="card span-4" style="min-height:600px; display:flex; flex-direction:column;">
+
+                        <!-- DATA CONTROLS -->
+                        <div
+                            style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; padding-bottom:15px; border-bottom:1px solid #eee;">
+                            <div style="display:flex; align-items:center; gap:10px;">
+                                <span style="font-size:13px; font-weight:600; color:#555;">SHOW ROWS:</span>
+                                <select id="data-limit" onchange="updateDataView(this.value)"
+                                    style="padding:4px 8px; border:1px solid #ccc; border-radius:4px; font-size:12px;">
+                                    <option value="10">Top 10</option>
+                                    <option value="50">Top 50</option>
+                                    <option value="100">Top 100</option>
+                                    <option value="500">Top 500</option>
+                                </select>
+                            </div>
+                            <div>
+                                <span style="font-size:12px; color:#aaa;">* Data reflects current selections</span>
+                            </div>
+                        </div>
+
+                        <!-- DATA TABLE -->
+                        <div style="flex:1; overflow:auto;">
+                            <table class="qlik-table" style="width:100%; border-collapse:collapse; font-size:12px;">
+                                <thead style="position:sticky; top:0; background:#f9f9f9; z-index:1;">
+                                    <tr style="text-align:left; color:#666;">
+                                        <th style="padding:10px; border-bottom:2px solid #ddd;">Order Date</th>
+                                        <th style="padding:10px; border-bottom:2px solid #ddd;">Customer</th>
+                                        <th style="padding:10px; border-bottom:2px solid #ddd;">Region</th>
+                                        <th style="padding:10px; border-bottom:2px solid #ddd;">Category</th>
+                                        <th style="padding:10px; border-bottom:2px solid #ddd;">Product Name</th>
+                                        <th style="padding:10px; border-bottom:2px solid #ddd; text-align:right;">Sales
+                                        </th>
+                                        <th style="padding:10px; border-bottom:2px solid #ddd; text-align:right;">Profit
+                                        </th>
+                                        <th style="padding:10px; border-bottom:2px solid #ddd; text-align:center;">
+                                            Discount</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="data-table-body" style="color:#333;">
+                                    <!-- ROWS INJECTED BY JS -->
+                                    <tr>
+                                        <td colspan="8" style="text-align:center; padding:20px; color:#aaa;">Loading
+                                            Data...</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- 1. OVERVIEW VIEW -->
                 <div id="view-overview" class="view-section">
                     <!-- KPIs -->
@@ -387,6 +432,18 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- Global Footer -->
+                <footer class="main-footer"
+                    style="text-align:center; padding:20px; color:#aaa; font-size:12px; margin-top:40px; border-top:1px solid #eee;">
+                    <div style="color:var(--text-primary); font-weight:600; margin-bottom:5px;">
+                        Developed & Maintained by Dept. of CSE (IoT), RCEE | 2025 All Rights Reserved
+                    </div>
+                    <div>
+                        Contact: <span style="color:#F59E0B;">9994463686</span> | Email: <span
+                            style="color:#F59E0B;">drtmusha@rcee.ac.in</span>
+                    </div>
+                </footer>
 
                 <!-- DEBUG (Safe at bottom) -->
                 <div id="debug-console"

@@ -515,3 +515,16 @@ input:checked+.slider:before {
         width: 100%;
     }
 }
+
+/* FOOTER */
+.main-footer {
+    background: #0F172A;
+    /* Dark Blue */
+    color: #94A3B8 !important;
+    width: 100%;
+}
+
+.main-footer div:first-child {
+    color: #E2E8F0 !important;
+    /* Lighter text for title */
+}
