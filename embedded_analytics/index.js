@@ -190,7 +190,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // DATASET EXPLORER LOGIC
     // ----------------------------------------------------
     let dataModel = null;
-    let currentSortField = 'row_id'; // Default
+    let currentSortField = 'Row ID'; // Default
     let currentSortOrder = 1;
 
     // Exposed Sort Function
@@ -224,25 +224,26 @@ document.addEventListener('DOMContentLoaded', () => {
             } catch (err) { console.error("Field check failed", err); }
 
             // Dimension Defs (0-16)
+            // Using Title Case for Superstore Dataset
             const dDefs = [
-                'row_id', 'order_id', 'order_date', 'ship_date', 'ship_mode',
-                'customer_id', 'customer_name', 'segment', 'country', 'city',
-                'state', 'postal_code', 'region', 'product_id', 'category', 'sub_category', 'product_name'
+                'Row ID', 'Order ID', 'Order Date', 'Ship Date', 'Ship Mode',
+                'Customer ID', 'Customer Name', 'Segment', 'Country', 'City',
+                'State', 'Postal Code', 'Region', 'Product ID', 'Category', 'Sub-Category', 'Product Name'
             ].map(f => ({ qDef: { qFieldDefs: [f] } }));
 
             // Measure Defs (17-20)
             const mDefs = [
-                { qDef: { qDef: 'Sum(sales)' } },
-                { qDef: { qDef: 'Sum(quantity)' } },
-                { qDef: { qDef: 'Avg(discount)' } },
-                { qDef: { qDef: 'Sum(profit)' } }
+                { qDef: { qDef: 'Sum([Sales])' } },
+                { qDef: { qDef: 'Sum([Quantity])' } },
+                { qDef: { qDef: 'Avg([Discount])' } },
+                { qDef: { qDef: 'Sum([Profit])' } }
             ];
 
             const fields = [
-                'row_id', 'order_id', 'order_date', 'ship_date', 'ship_mode',
-                'customer_id', 'customer_name', 'segment', 'country', 'city',
-                'state', 'postal_code', 'region', 'product_id', 'category',
-                'sub_category', 'product_name', 'sales', 'quantity', 'discount', 'profit'
+                'Row ID', 'Order ID', 'Order Date', 'Ship Date', 'Ship Mode',
+                'Customer ID', 'Customer Name', 'Segment', 'Country', 'City',
+                'State', 'Postal Code', 'Region', 'Product ID', 'Category',
+                'Sub-Category', 'Product Name', 'Sales', 'Quantity', 'Discount', 'Profit'
             ];
 
             const sortIdx = fields.indexOf(currentSortField);
