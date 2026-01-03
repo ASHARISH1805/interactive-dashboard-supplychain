@@ -80,7 +80,7 @@ function updateStatus(state) {
 
     if (state === 'connected') {
         dot.className = 'dot ok'; // Turn Green
-        txt.innerText = 'Connected';
+        txt.innerText = 'Qlik Cloud Connected • Real-time Analytics Engine Active';
     } else if (state === 'error') {
         dot.className = 'dot';
         dot.style.backgroundColor = 'red';
