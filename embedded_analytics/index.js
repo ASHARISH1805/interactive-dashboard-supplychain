@@ -114,6 +114,85 @@ function setFilterUI(btnId) {
     if (btn) btn.classList.add('active');
 }
 
+// ----------------------------------------------------
+// UI INTERACTIONS (Selections & Navigation)
+// ----------------------------------------------------
+function updateSelectionBar(field, value) {
+    // 1. Visual Pill Update
+    document.querySelectorAll('.selection-pill').forEach(p => {
+        if (p.innerText.includes(value)) {
+            p.style.backgroundColor = '#009845'; // Qlik Green
+            p.style.color = 'white';
+        } else if (p.innerText.includes('Clear')) {
+            // Reset Clear button style
+            p.style.backgroundColor = '#fff';
+            p.style.color = '#333';
+        } else {
+            // Reset others
+            p.style.backgroundColor = '#e0e0e0';
+            p.style.color = '#333';
+        }
+    });
+
+    // 2. Clear Logic Reset
+    if (field === 'Clear') {
+        document.querySelectorAll('.selection-pill').forEach(p => {
+            if (!p.innerText.includes('Clear')) {
+                p.style.backgroundColor = '#e0e0e0';
+                p.style.color = '#333';
+            }
+        });
+        return;
+    }
+
+    // 3. Make Qlik Selection (Already handled by button ID click if attached, but let's be safe)
+    log(`🔍 Selecting ${field}: ${value}`);
+    if (app) {
+        app.getField(field).then(f => f.select(value));
+    }
+}
+
+// NAVIGATION LOGIC
+document.addEventListener('DOMContentLoaded', () => {
+    const views = {
+        'nav-exec': 'grid-executive',
+        'nav-logic': 'grid-logistics',
+        'nav-inv': 'grid-inventory'
+    };
+
+    Object.keys(views).forEach(navId => {
+        const el = document.getElementById(navId);
+        if (el) {
+            el.addEventListener('click', () => {
+                // 1. Update Active Nav Link
+                document.querySelectorAll('.nav-link').forEach(n => n.classList.remove('active'));
+                el.classList.add('active');
+
+                // 2. Show Target Grid
+                document.querySelectorAll('.dashboard-grid').forEach(g => {
+                    // Don't hide the kpi-row if it's meant to be shared, but here we have specific grids
+                    if (g.id !== 'dashboard-kpi-grid') g.style.display = 'none';
+                });
+
+                // Hide ALL main grids first
+                document.getElementById('grid-executive').style.display = 'none';
+                document.getElementById('grid-logistics').style.display = 'none';
+                document.getElementById('grid-inventory').style.display = 'none';
+
+                // Show Selected
+                const targetId = views[navId];
+                const target = document.getElementById(targetId);
+                if (target) {
+                    target.style.display = 'grid'; // Grid layout
+                    log(`📱 Switched to View: ${targetId}`);
+                    // Trigger resize for charts
+                    window.dispatchEvent(new Event('resize'));
+                }
+            });
+        }
+    });
+});
+
 async function updateDashboard() {
     try {
         log('📊 Fetching KPI Data...');
@@ -355,7 +434,24 @@ async function updateCharts() {
             });
         }
     } catch (e) { console.error("Radar failed", e); }
+
+    // CALL NEW UPDATE FUNCTIONS
+    if (typeof updateLogisticsCharts === 'function') await updateLogisticsCharts();
+    if (typeof updateInventoryCharts === 'function') await updateInventoryCharts();
 }
 
-// Start
+// ----------------------------------------------------
+// 3. LOGISTICS TOWER CHARTS
+// ----------------------------------------------------
+async function updateLogisticsCharts() {
+    try {
+        // Ship Mode Analysis logic
+    } catch (e) { }
+}
+
+async function updateInventoryCharts() {
+    // Logic
+}
+
+// Start Application
 init();
