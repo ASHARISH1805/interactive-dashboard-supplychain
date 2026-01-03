@@ -18,24 +18,24 @@
         <!-- SIDEBAR -->
         <aside class="sidebar">
             <div class="brand-section">
-                <span>📦</span> Qlik Supply Chain
+                <span>📦</span> Qlik Analytical
             </div>
             <nav class="nav-links">
-                <div class="nav-link active" id="nav-exec">
-                    <span>📈</span> Performance
+                <div class="nav-link active" id="nav-overview">
+                    <span>📊</span> Overview
                 </div>
-                <div class="nav-link" id="nav-logic">
-                    <span>🚚</span> Logistics Tower
+                <div class="nav-link" id="nav-sales">
+                    <span>💰</span> Sales Trends
                 </div>
-                <div class="nav-link" id="nav-inv">
-                    <span>🏭</span> Inventory Health
+                <div class="nav-link" id="nav-shipping">
+                    <span>🚚</span> Shipping
                 </div>
-                <div class="nav-link">
-                    <span>⚙️</span> Settings
+                <div class="nav-link" id="nav-products">
+                    <span>📦</span> Products
                 </div>
             </nav>
             <div class="sidebar-footer">
-                <div style="font-size:10px; opacity:0.7;">v2.5.0 Connected to Qlik Cloud</div>
+                <div style="font-size:10px; opacity:0.7;">v3.0.0 Real-time Data</div>
                 <!-- LOG CONTAINER -->
                 <div id="ui-log"
                     style="font-family:monospace; font-size:10px; color:#aaa; margin-top:10px; max-height:100px; overflow-y:auto; word-break:break-all;">
@@ -48,13 +48,13 @@
             <!-- HEADER -->
             <header class="top-header">
                 <div class="page-title">
-                    <h1>Qlik based Supply Chain Data Analytical</h1>
-                    <p>Global Analytics & KPIs</p>
+                    <h1 id="page-heading">Overview</h1>
+                    <p>Supply Chain Key Performance Indicators</p>
                 </div>
                 <div class="header-actions">
-                    <!-- QLIK SELECTIONS BAR (Replaces Buttons) -->
+                    <!-- QLIK SELECTIONS BAR -->
                     <div style="display:flex; gap:10px; align-items:center;">
-                        <span style="font-size:12px; font-weight:600; color:#555;">SELECTIONS:</span>
+                        <span style="font-size:12px; font-weight:600; color:#555;">FILTERS:</span>
                         <div class="selection-pill" onclick="document.getElementById('btn-west').click()"
                             style="cursor:pointer; background:#e0e0e0; padding:4px 8px; border-radius:4px; font-size:12px;">
                             Region: West
@@ -68,7 +68,7 @@
                             Clear
                         </div>
                     </div>
-                    <!-- Hidden Buttons for Logic Compatibility -->
+                    <!-- Hidden Logic Buttons -->
                     <div style="display:none;">
                         <button id="btn-west">W</button>
                         <button id="btn-east">E</button>
@@ -90,111 +90,75 @@
             <div class="dashboard-scroll">
 
                 <!-- VIEW 1: EXECUTIVE (Default) -->
-                <!-- VIEW 1: EXECUTIVE (Default) -->
-                <div id="grid-executive">
-
-                    <!-- TOP KPI ID (Fixed Height Row) -->
+                <!-- 1. OVERVIEW VIEW -->
+                <div id="view-overview" class="view-section">
+                    <!-- KPIs -->
                     <div class="dashboard-grid kpi-row">
-                        <!-- KPI 1 -->
                         <div class="card span-1 h-kpi">
-                            <div class="card-title">Total Revenue</div>
-                            <div class="metric-value" id="kpi-sales">---</div>
-                            <div class="card-footer"><span class="trend-badge up">▲ 12.4%</span> vs last month</div>
+                            <div class="card-title">Revenue</div>
+                            <div class="metric-value" id="kpi-sales">--</div>
+                            <div class="card-footer">Total Sales</div>
                         </div>
-
-                        <!-- KPI 2 -->
                         <div class="card span-1 h-kpi">
-                            <div class="card-title">Profit Margin</div>
-                            <div class="metric-value" id="kpi-margin">---</div>
-                            <div class="card-footer"><span class="trend-badge down">▼ 1.2%</span> vs target</div>
+                            <div class="card-title">Margin %</div>
+                            <div class="metric-value" id="kpi-margin">--</div>
+                            <div class="card-footer">Profitability</div>
                         </div>
-
-                        <!-- KPI 3 -->
                         <div class="card span-1 h-kpi">
-                            <div class="card-title">Logistics Cost</div>
-                            <div class="metric-value" id="kpi-otif">---</div>
-                            <div class="card-footer"><span class="trend-badge up">▲ 5.0%</span> efficiency</div>
+                            <div class="card-title">Cost Ratio</div>
+                            <div class="metric-value" id="kpi-otif">--</div>
+                            <div class="card-footer">Logistics Impact</div>
                         </div>
-
-                        <!-- KPI 4 -->
                         <div class="card span-1 h-kpi">
                             <div class="card-title">Avg Discount</div>
-                            <div class="metric-value" id="kpi-orders">---</div>
-                            <div class="card-footer" style="font-size:12px; color:#aaa;">Given to customers</div>
+                            <div class="metric-value" id="kpi-orders">--</div>
+                            <div class="card-footer">Pricing Discipline</div>
                         </div>
                     </div>
-
-                    <!-- CHARTS GRID (Auto Height) -->
+                    <!-- Overview Charts -->
                     <div class="dashboard-grid">
-
-                        <!-- CHART 1: PARETO COMBO -->
                         <div class="card span-2 h-chart">
-                            <div class="card-title">
-                                <span>Pareto Analysis (Sales vs Profit)</span>
-                            </div>
-                            <div class="chart-container">
-                                <canvas id="chart-combo"></canvas>
-                            </div>
+                            <div class="card-title">Sales vs Profit (Pareto)</div>
+                            <div class="chart-container"><canvas id="chart-combo"></canvas></div>
                         </div>
-
-                        <!-- CHART 2: CUSTOMER PROFITABILITY SCATTER (Values) -->
                         <div class="card span-2 h-chart">
+                            <div class="card-title">Discount by Region</div>
+                            <div class="chart-container"><canvas id="chart-radar"></canvas></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2. SALES VIEW -->
+                <div id="view-sales" class="view-section" style="display:none;">
+                    <div class="dashboard-grid">
+                        <div class="card span-4 h-chart">
                             <div class="card-title">Customer Profitability Matrix</div>
-                            <div class="chart-container">
-                                <canvas id="chart-scatter"></canvas>
-                            </div>
+                            <div class="chart-container"><canvas id="chart-scatter"></canvas></div>
                         </div>
-
-                        <!-- CHART 3: REGIONAL RADAR -->
-                        <div class="card span-2 h-chart">
-                            <div class="card-title">Regional Discount Discipline</div>
-                            <div class="chart-container">
-                                <canvas id="chart-radar"></canvas>
-                            </div>
-                        </div>
-
-                        <!-- CHART 4: REGIONAL MAP/BAR (Placeholder or reused) -->
-                        <div class="card span-2 h-chart">
-                            <div class="card-title">Regional Distribution</div>
-                            <div class="chart-container">
-                                <canvas id="chart-region"></canvas>
-                            </div>
-                        </div>
-
                     </div>
                 </div>
 
-                <!-- VIEW 2: LOGISTICS (Hidden by default) -->
-                <div class="dashboard-grid" id="grid-logistics" style="display:none;">
-                    <div class="card span-4 h-kpi" style="background:#eef2f7; border:1px dashed #ccc;">
-                        <h2 style="color:#555;">🚚 Logistics Control Tower</h2>
-                        <p style="font-size:12px; color:#777;">Tracking shipment lifecycle and carrier performance.
-                        </p>
-                    </div>
-
-                    <div class="card span-2 h-chart">
-                        <div class="card-title">Late Deliveries by Region</div>
-                        <div style="flex:1; display:flex; align-items:center; justify-content:center; color:#ccc;">[
-                            MAP PLACEHOLDER ]</div>
-                    </div>
-                    <div class="card span-2 h-chart">
-                        <div class="card-title">Carrier Cost Analysis</div>
-                        <div style="flex:1; display:flex; align-items:center; justify-content:center; color:#ccc;">[
-                            COST GRID PLACEHOLDER ]</div>
+                <!-- 3. SHIPPING VIEW -->
+                <div id="view-shipping" class="view-section" style="display:none;">
+                    <div class="dashboard-grid">
+                        <div class="card span-2 h-chart">
+                            <div class="card-title">Shipping Cost by Mode</div>
+                            <div class="chart-container"><canvas id="chart-ship-mode"></canvas></div>
+                        </div>
+                        <div class="card span-2 h-chart">
+                            <div class="card-title">Shipping Cost vs Sales</div>
+                            <div class="chart-container"><canvas id="chart-ship-cost"></canvas></div>
+                        </div>
                     </div>
                 </div>
 
-                <!-- VIEW 3: INVENTORY (Hidden by default) -->
-                <div class="dashboard-grid" id="grid-inventory" style="display:none;">
-                    <div class="card span-4 h-kpi" style="background:#f0f9f4; border:1px dashed #ccc;">
-                        <h2 style="color:#555;">🏭 Inventory Health</h2>
-                        <p style="font-size:12px; color:#777;">Real-time stock levels, predicted stockouts, and
-                            turnover.</p>
-                    </div>
-                    <div class="card span-4 h-chart">
-                        <div class="card-title">Stock Level Forecast (AI Prediction)</div>
-                        <div style="flex:1; display:flex; align-items:center; justify-content:center; color:#ccc;">[
-                            FORECAST CHART PLACEHOLDER ]</div>
+                <!-- 4. PRODUCTS VIEW -->
+                <div id="view-products" class="view-section" style="display:none;">
+                    <div class="dashboard-grid">
+                        <div class="card span-4 h-chart">
+                            <div class="card-title">Product Category Performance</div>
+                            <div class="chart-container"><canvas id="chart-product-bar"></canvas></div>
+                        </div>
                     </div>
                 </div>
 

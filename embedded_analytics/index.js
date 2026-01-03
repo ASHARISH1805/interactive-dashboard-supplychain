@@ -155,9 +155,10 @@ function updateSelectionBar(field, value) {
 // NAVIGATION LOGIC
 document.addEventListener('DOMContentLoaded', () => {
     const views = {
-        'nav-exec': 'grid-executive',
-        'nav-logic': 'grid-logistics',
-        'nav-inv': 'grid-inventory'
+        'nav-overview': 'view-overview',
+        'nav-sales': 'view-sales',
+        'nav-shipping': 'view-shipping',
+        'nav-products': 'view-products'
     };
 
     Object.keys(views).forEach(navId => {
@@ -175,9 +176,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
 
                 // Hide ALL main grids first
-                document.getElementById('grid-executive').style.display = 'none';
-                document.getElementById('grid-logistics').style.display = 'none';
-                document.getElementById('grid-inventory').style.display = 'none';
+                document.querySelectorAll('.view-section').forEach(v => v.style.display = 'none');
 
                 // Show Selected
                 const targetId = views[navId];
@@ -441,16 +440,118 @@ async function updateCharts() {
 }
 
 // ----------------------------------------------------
-// 3. LOGISTICS TOWER CHARTS
+// 3. LOGISTICS TOWER CHARTS (Refactored to Shipping View)
 // ----------------------------------------------------
+let chartShipMode = null;
+let chartShipCost = null;
+
 async function updateLogisticsCharts() {
     try {
-        // Ship Mode Analysis logic
-    } catch (e) { }
+        log('.. Generating Shipping Mode Analysis');
+
+        // 1. Ship Mode Pie Chart
+        const shipModel = await app.createSessionObject({
+            qInfo: { qType: 'chart' },
+            qHyperCubeDef: {
+                qDimensions: [{ qDef: { qFieldDefs: ['ship_mode'] } }],
+                qMeasures: [{ qDef: { qDef: 'Sum(shipping_cost)' } }],
+                qInitialDataFetch: [{ qTop: 0, qLeft: 0, qWidth: 2, qHeight: 10 }]
+            }
+        });
+        const rows = (await shipModel.getLayout()).qHyperCube.qDataPages[0].qMatrix;
+
+        const el = document.getElementById('chart-ship-mode');
+        if (el) {
+            if (chartShipMode) chartShipMode.destroy();
+            chartShipMode = new Chart(el, {
+                type: 'doughnut',
+                data: {
+                    labels: rows.map(r => r[0].qText),
+                    datasets: [{
+                        data: rows.map(r => r[1].qNum),
+                        backgroundColor: ['#3B82F6', '#10B981', '#F59E0B', '#EF4444'],
+                        borderWidth: 0
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right' } } }
+            });
+        }
+
+        // 2. Shipping Cost Scatter (Sales vs Cost)
+        const costModel = await app.createSessionObject({
+            qInfo: { qType: 'chart' },
+            qHyperCubeDef: {
+                qDimensions: [{ qDef: { qFieldDefs: ['customer_name'] } }],
+                qMeasures: [
+                    { qDef: { qDef: 'Sum(sales)' } },
+                    { qDef: { qDef: 'Sum(shipping_cost)' } }
+                ],
+                qInitialDataFetch: [{ qTop: 0, qLeft: 0, qWidth: 3, qHeight: 100 }]
+            }
+        });
+        const costRows = (await costModel.getLayout()).qHyperCube.qDataPages[0].qMatrix.map(r => ({
+            name: r[0].qText,
+            x: r[1].qNum, // Sales
+            y: r[2].qNum  // Cost
+        }));
+
+        const elCost = document.getElementById('chart-ship-cost');
+        if (elCost) {
+            if (chartShipCost) chartShipCost.destroy();
+            chartShipCost = new Chart(elCost, {
+                type: 'scatter',
+                data: {
+                    datasets: [{
+                        label: 'Cost Efficiency',
+                        data: costRows,
+                        backgroundColor: 'rgba(59, 130, 246, 0.5)',
+                        borderColor: '#3B82F6'
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, scales: { x: { title: { display: true, text: 'Sales' } }, y: { title: { display: true, text: 'Shipping Cost' } } } }
+            });
+        }
+
+    } catch (e) { console.error('Logistic Charts Failed', e); }
 }
 
+// ----------------------------------------------------
+// 4. PRODUCT CHARTS (Refactored to Inventory/Products View)
+// ----------------------------------------------------
+let chartProducts = null;
+
 async function updateInventoryCharts() {
-    // Logic
+    try {
+        log('.. Generating Product Analysis');
+        const prodModel = await app.createSessionObject({
+            qInfo: { qType: 'chart' },
+            qHyperCubeDef: {
+                qDimensions: [{ qDef: { qFieldDefs: ['category'] } }],
+                qMeasures: [
+                    { qDef: { qDef: 'Sum(profit)' } },
+                    { qDef: { qDef: 'Sum(sales)' } }
+                ],
+                qInitialDataFetch: [{ qTop: 0, qLeft: 0, qWidth: 3, qHeight: 10 }]
+            }
+        });
+        const rows = (await prodModel.getLayout()).qHyperCube.qDataPages[0].qMatrix;
+
+        const el = document.getElementById('chart-product-bar');
+        if (el) {
+            if (chartProducts) chartProducts.destroy();
+            chartProducts = new Chart(el, {
+                type: 'bar',
+                data: {
+                    labels: rows.map(r => r[0].qText),
+                    datasets: [
+                        { label: 'Profit', data: rows.map(r => r[1].qNum), backgroundColor: '#10B981' },
+                        { label: 'Sales', data: rows.map(r => r[2].qNum), backgroundColor: '#3B82F6', hidden: true }
+                    ]
+                },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+        }
+    } catch (e) { console.error('Product Charts Failed', e); }
 }
 
 // Start Application
