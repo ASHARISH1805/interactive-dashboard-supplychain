@@ -190,13 +190,13 @@ document.addEventListener('DOMContentLoaded', () => {
     // DATASET EXPLORER LOGIC
     // ----------------------------------------------------
     let dataModel = null;
-    let currentSortField = 'row_id';
-    let currentSortOrder = 1; // 1 = Ascending, -1 = Descending
+    let currentSortField = 'row_id'; // Default
+    let currentSortOrder = 1;
 
     // Exposed Sort Function
     window.sortData = function (field) {
         if (currentSortField === field) {
-            currentSortOrder *= -1; // Toggle
+            currentSortOrder *= -1;
         } else {
             currentSortField = field;
             currentSortOrder = 1;
@@ -214,6 +214,15 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             log(`💾 Fetching Top ${limit} Rows (Sorted by ${currentSortField})...`);
 
+            // Debug: Check Fields
+            try {
+                const tables = await app.getTablesAndKeys({}, {}, 0, true, false);
+                if (tables && tables.tr) {
+                    const allFields = tables.tr.flatMap(t => t.qFields.map(f => f.qName));
+                    log('🔍 App Fields: ' + allFields.slice(0, 10).join(', ') + '...');
+                }
+            } catch (err) { console.error("Field check failed", err); }
+
             // Dimension Defs (0-16)
             const dDefs = [
                 'row_id', 'order_id', 'order_date', 'ship_date', 'ship_mode',
@@ -229,7 +238,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 { qDef: { qDef: 'Sum(profit)' } }
             ];
 
-            // Field Mapping for Sort
             const fields = [
                 'row_id', 'order_id', 'order_date', 'ship_date', 'ship_mode',
                 'customer_id', 'customer_name', 'segment', 'country', 'city',
@@ -238,18 +246,17 @@ document.addEventListener('DOMContentLoaded', () => {
             ];
 
             const sortIdx = fields.indexOf(currentSortField);
+            // Default 0 if not found, but we handle sortIdx logic below differently
 
             // Apply Sort Criteria Logic
             if (sortIdx !== -1) {
                 if (sortIdx <= 16) {
-                    // Sorting a Dimension
                     dDefs[sortIdx].qDef.qSortCriterias = [{
                         qSortByAscii: currentSortOrder,
                         qSortByNumeric: currentSortOrder,
                         qSortByLoadOrder: 0
                     }];
                 } else {
-                    // Sorting a Measure
                     mDefs[sortIdx - 17].qSortBy = {
                         qSortByNumeric: currentSortOrder,
                         qSortByLoadOrder: 0
@@ -258,6 +265,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             // Create Table HyperCube
+            if (dataModel) app.destroySessionObject(dataModel.id);
             dataModel = await app.createSessionObject({
                 qInfo: { qType: 'table' },
                 qHyperCubeDef: {
@@ -268,25 +276,38 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             });
 
-            const rows = (await dataModel.getLayout()).qHyperCube.qDataPages[0].qMatrix;
+            const layout = await dataModel.getLayout();
+            const rows = layout.qHyperCube.qDataPages[0].qMatrix;
+
+            // DEBUG: Log first row length
+            if (rows.length > 0) {
+                if (rows[0].length < 21) log(`⚠️ Warning: Only received ${rows[0].length} columns out of 21. Check field names.`);
+            }
 
             let html = '';
             rows.forEach(r => {
-                const profit = r[20].qNum;
+                if (!r) return;
+
+                // Safe Access
+                const profitCell = r[20];
+                const profit = profitCell ? profitCell.qNum : 0;
                 const profitColor = profit < 0 ? '#D13438' : '#009845';
 
                 html += `<tr style="border-bottom:1px solid #eee; white-space:nowrap;">`;
 
                 // Render columns 0-16 (Dimensions)
                 for (let i = 0; i <= 16; i++) {
-                    html += `<td style="padding:8px;">${r[i].qText || '-'}</td>`;
+                    html += `<td style="padding:8px;">${r[i] ? (r[i].qText || '-') : '-'}</td>`;
                 }
 
                 // Render columns 17-20 (Measures)
-                html += `<td style="padding:8px; text-align:right;">${r[17].qText}</td>`; // Sales
-                html += `<td style="padding:8px; text-align:right;">${r[18].qText}</td>`; // Quantity
-                html += `<td style="padding:8px; text-align:center;">${(r[19].qNum * 100).toFixed(0)}%</td>`; // Discount
-                html += `<td style="padding:8px; text-align:right; color:${profitColor}; font-weight:bold;">${r[20].qText}</td>`; // Profit
+                html += `<td style="padding:8px; text-align:right;">${r[17] ? r[17].qText : '-'}</td>`;
+                html += `<td style="padding:8px; text-align:right;">${r[18] ? r[18].qText : '-'}</td>`;
+
+                const discVal = r[19] ? r[19].qNum : 0;
+                html += `<td style="padding:8px; text-align:center;">${(discVal * 100).toFixed(0)}%</td>`;
+
+                html += `<td style="padding:8px; text-align:right; color:${profitColor}; font-weight:bold;">${r[20] ? r[20].qText : '-'}</td>`;
 
                 html += `</tr>`;
             });
