@@ -16,8 +16,8 @@ function log(msg) {
 }
 
 function authenticate() {
-    // Dynamic Redirect URL (Works for Localhost AND Online/Render)
-    const redirectUrl = window.location.origin + '/qlik/';
+    // Dynamic Redirect URL (Root)
+    const redirectUrl = window.location.origin + '/';
     const state = Math.random().toString(36).substring(7);
     const authUrl = `https://${CONFIG.url}/oauth/authorize?client_id=${CONFIG.clientId}&response_type=code&redirect_uri=${encodeURIComponent(redirectUrl)}&scope=user_default%20offline_access&state=${state}`;
 
@@ -73,7 +73,7 @@ async function connectToQlik() {
                     clientId: CONFIG.clientId,
                     clientSecret: CONFIG.clientSecret,
                     code: authCode,
-                    redirectUri: window.location.origin + '/qlik/' // Send dynamic URI
+                    redirectUri: window.location.origin + '/' // Send dynamic URI (Root)
                 })
             });
 
