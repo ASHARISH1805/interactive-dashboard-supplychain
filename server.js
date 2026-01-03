@@ -50,9 +50,6 @@ app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'embedded_analytics', 'index.html'));
 });
 
-// Backward compatibility (optional)
-app.use('/qlik', express.static(path.join(__dirname, 'embedded_analytics')));
-
 // Health check endpoint
 app.get('/health', async (req, res) => {
     try {
@@ -63,7 +60,6 @@ app.get('/health', async (req, res) => {
     }
 });
 
-// Qlik OAuth Token Exchange Proxy (Bypasses CORS & IPv6 Timeouts)
 // Qlik OAuth Token Exchange Proxy (Bypasses CORS & IPv6 Timeouts)
 const fs = require('fs');
 const REFRESH_TOKEN_FILE = path.join(__dirname, 'qlik_refresh_token.txt');
@@ -77,7 +73,7 @@ app.post('/api/qlik/token', (req, res) => {
         client_secret: clientSecret,
         code: code,
         grant_type: 'authorization_code',
-        redirect_uri: redirectUri || 'http://localhost:3000/qlik/'
+        redirect_uri: redirectUri || 'http://localhost:3000/'
     });
 
     const options = {
