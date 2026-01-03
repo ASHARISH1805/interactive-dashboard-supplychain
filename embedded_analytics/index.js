@@ -190,11 +190,13 @@ document.addEventListener('DOMContentLoaded', () => {
     // DATASET EXPLORER LOGIC
     // ----------------------------------------------------
     let dataModel = null;
-    let currentSortField = 'row_id'; // Default
+    let currentSortField = 'Row ID'; // Default logic name (mapped later)
     let currentSortOrder = 1;
+    let cachedFieldMap = null;
 
     // Exposed Sort Function
     window.sortData = function (field) {
+        log(`🔹 Sorting by ${field}...`);
         if (currentSortField === field) {
             currentSortOrder *= -1;
         } else {
@@ -204,6 +206,44 @@ document.addEventListener('DOMContentLoaded', () => {
         updateDataView(document.getElementById('data-limit').value);
     };
 
+    async function resolveFields() {
+        if (cachedFieldMap) return cachedFieldMap;
+        try {
+            const tables = await app.getTablesAndKeys({}, {}, 0, true, false);
+            const available = tables.tr.flatMap(t => t.qFields.map(f => f.qName));
+
+            // Map Logical Name -> Actual Field Name (Case Insensitive Match)
+            const targets = [
+                'Row ID', 'Order ID', 'Order Date', 'Ship Date', 'Ship Mode',
+                'Customer ID', 'Customer Name', 'Segment', 'Country', 'City',
+                'State', 'Postal Code', 'Region', 'Product ID', 'Category',
+                'Sub-Category', 'Product Name', 'Sales', 'Quantity', 'Discount', 'Profit', 'Shipping Cost'
+            ];
+
+            const map = {};
+            targets.forEach(t => {
+                // Try 1: Exact Match
+                let found = available.find(a => a === t);
+                // Try 2: Snake Case (row_id matching Row ID)
+                if (!found) found = available.find(a => a.toLowerCase() === t.toLowerCase().replace(' ', '_'));
+                // Try 3: No Space (RowID matching Row ID)
+                if (!found) found = available.find(a => a.toLowerCase() === t.toLowerCase().replace(' ', ''));
+                // Try 4: Lowercase match
+                if (!found) found = available.find(a => a.toLowerCase() === t.toLowerCase());
+
+                map[t] = found || null;
+                if (!found) console.warn(`⚠️ Could not resolve field: ${t}`);
+            });
+
+            cachedFieldMap = map;
+            log('✅ Fields Resolved: ' + JSON.stringify(map));
+            return map;
+        } catch (e) {
+            console.error("Field Resolution Failed", e);
+            return null;
+        }
+    }
+
     async function updateDataView(limit) {
         if (!app) return;
         limit = parseInt(limit) || 100;
@@ -212,52 +252,52 @@ document.addEventListener('DOMContentLoaded', () => {
         tbody.innerHTML = '<tr><td colspan="21" style="text-align:center; padding:20px; color:#aaa;">Fetching Records...</td></tr>';
 
         try {
+            const fieldMap = await resolveFields();
+            if (!fieldMap) throw new Error("Could not resolve dataset fields. Check log.");
+
             log(`💾 Fetching Top ${limit} Rows (Sorted by ${currentSortField})...`);
 
-            // Debug: Check Fields
-            try {
-                const tables = await app.getTablesAndKeys({}, {}, 0, true, false);
-                if (tables && tables.tr) {
-                    const allFields = tables.tr.flatMap(t => t.qFields.map(f => f.qName));
-                    log('🔍 App Fields: ' + allFields.slice(0, 10).join(', ') + '...');
-                }
-            } catch (err) { console.error("Field check failed", err); }
+            const getFD = (logicalName) => {
+                const actual = fieldMap[logicalName];
+                return actual ? { qFieldDefs: [actual] } : { qDef: "''" };
+            };
 
-            // Dimension Defs (0-16) - REVERTED TO SNAKE_CASE
-            const dDefs = [
-                'row_id', 'order_id', 'order_date', 'ship_date', 'ship_mode',
-                'customer_id', 'customer_name', 'segment', 'country', 'city',
-                'state', 'postal_code', 'region', 'product_id', 'category', 'sub_category', 'product_name'
-            ].map(f => ({ qDef: { qFieldDefs: [f] } }));
+            const getM = (logicalName, agg) => {
+                const actual = fieldMap[logicalName];
+                return actual ? `${agg}([${actual}])` : '0';
+            };
+
+            // Dimension Defs (0-16)
+            const dNames = [
+                'Row ID', 'Order ID', 'Order Date', 'Ship Date', 'Ship Mode',
+                'Customer ID', 'Customer Name', 'Segment', 'Country', 'City',
+                'State', 'Postal Code', 'Region', 'Product ID', 'Category', 'Sub-Category', 'Product Name'
+            ];
+            const dDefs = dNames.map(name => ({ qDef: getFD(name) }));
 
             // Measure Defs (17-20)
             const mDefs = [
-                { qDef: { qDef: 'Sum(sales)' } },
-                { qDef: { qDef: 'Sum(quantity)' } },
-                { qDef: { qDef: 'Avg(discount)' } },
-                { qDef: { qDef: 'Sum(profit)' } }
+                { qDef: { qDef: getM('Sales', 'Sum'), qLabel: 'Sales' } },
+                { qDef: { qDef: getM('Quantity', 'Sum'), qLabel: 'Quantity' } },
+                { qDef: { qDef: getM('Discount', 'Avg'), qLabel: 'Discount' } },
+                { qDef: { qDef: getM('Profit', 'Sum'), qLabel: 'Profit' } }
             ];
 
-            const fields = [
-                'row_id', 'order_id', 'order_date', 'ship_date', 'ship_mode',
-                'customer_id', 'customer_name', 'segment', 'country', 'city',
-                'state', 'postal_code', 'region', 'product_id', 'category',
-                'sub_category', 'product_name', 'sales', 'quantity', 'discount', 'profit'
-            ];
+            const allCols = [...dNames, 'Sales', 'Quantity', 'Discount', 'Profit'];
+            const sortIdx = allCols.indexOf(currentSortField);
 
-            const sortIdx = fields.indexOf(currentSortField);
-
+            // Apply Sort
             if (sortIdx !== -1) {
-                if (sortIdx <= 16) {
+                if (sortIdx < 17) {
                     dDefs[sortIdx].qDef.qSortCriterias = [{
                         qSortByAscii: currentSortOrder,
                         qSortByNumeric: currentSortOrder,
-                        qSortByLoadOrder: 0
+                        qSortByLoadOrder: 1
                     }];
                 } else {
                     mDefs[sortIdx - 17].qSortBy = {
                         qSortByNumeric: currentSortOrder,
-                        qSortByLoadOrder: 0
+                        qSortByLoadOrder: 1
                     };
                 }
             }
@@ -278,7 +318,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const rows = layout.qHyperCube.qDataPages[0].qMatrix;
 
             if (rows.length > 0) {
-                if (rows[0].length < 21) log(`⚠️ Warning: Only received ${rows[0].length} columns out of 21. Check field names.`);
+                if (rows[0].length < 21) log(`⚠️ Warning: Only received ${rows[0].length} columns out of 21.`);
             }
 
             let html = '';
@@ -290,7 +330,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 html += `<tr style="border-bottom:1px solid #eee; white-space:nowrap;">`;
                 for (let i = 0; i <= 16; i++) {
-                    html += `<td style="padding:8px;">${r[i] ? (r[i].qText || '-') : '-'}</td>`;
+                    const cell = r[i];
+                    html += `<td style="padding:8px;">${(cell && cell.qText) ? cell.qText : '-'}</td>`;
                 }
                 html += `<td style="padding:8px; text-align:right;">${r[17] ? r[17].qText : '-'}</td>`;
                 html += `<td style="padding:8px; text-align:right;">${r[18] ? r[18].qText : '-'}</td>`;
@@ -828,14 +869,16 @@ async function handleAIQuery(text) {
         const ctx = document.getElementById('chart-ai');
         // chartAI global var expected
         // We will assume chartAI is accessible or we should look it up
-        if (window.chartAIInstance) window.chartAIInstance.destroy(); // We don't have global ref...
-        // Let's rely on the previous logic style or just skip destroy if var not found
-        // Ah, the logic is inside handleAIQuery scope in previous file, but here I moved it.
-        // I should have kept it.
+        if (typeof chartAI !== 'undefined' && chartAI) chartAI.destroy();
+        else {
+            // Try to destroy existing if valid context
+            const checkChart = Chart.getChart(ctx);
+            if (checkChart) checkChart.destroy();
+        }
 
         // Let's use a simplistic recreation.
         new Chart(ctx, {
-            type: 'bar',
+            type: 'bar', // Dynamic capability possible, but Bar is safest for aggregation
             data: {
                 labels: data.map(d => d.label),
                 datasets: [{
