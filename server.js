@@ -11,7 +11,7 @@ const PORT = process.env.PORT || 3000;
 // Middleware
 app.use(cors());
 app.use(express.json());
-app.use(express.static('public'));
+// Public folder served at /public path (see line 47)
 
 // PostgreSQL connection pool
 const pool = new Pool({
