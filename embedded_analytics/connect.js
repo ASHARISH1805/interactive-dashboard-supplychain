@@ -97,9 +97,9 @@ async function connectToQlik() {
 
         // Pass token in URL (Standard Qlik Cloud JWT behavior)
         // STRATEGY: Use Local WebSocket Proxy to bypass Browser Origin Blocks
-        // We connect to 'ws://localhost:3000/qlik-ws/...' and the Node server tunnels to Qlik.
-        // Also remove 'qlik-web-integration-id' since we are proxied.
-        const wsUrl = `ws://${window.location.host}/qlik-ws/app/${CONFIG.appId}?qlik-client-id=${CONFIG.clientId}&access_token=${accessToken}`;
+        // PROTOCOL: Must detect if we are on HTTPS (Render) or HTTP (Localhost)
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const wsUrl = `${protocol}//${window.location.host}/qlik-ws/app/${CONFIG.appId}?qlik-client-id=${CONFIG.clientId}&access_token=${accessToken}`;
 
         log(`🔗 Dialing Local Proxy: ${wsUrl}...`);
         const session = enigma.create({ schema, url: wsUrl });
