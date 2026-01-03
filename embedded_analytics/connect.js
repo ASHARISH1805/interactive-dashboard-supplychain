@@ -16,8 +16,8 @@ function log(msg) {
 }
 
 function authenticate() {
-    // Dynamic Redirect: Returns to exact current path (e.g. / or /qlik/)
-    const redirectUrl = window.location.href.split('?')[0];
+    // Reverted to Static /qlik/ Redirect
+    const redirectUrl = window.location.origin + '/qlik/';
     const state = Math.random().toString(36).substring(7);
     const authUrl = `https://${CONFIG.url}/oauth/authorize?client_id=${CONFIG.clientId}&response_type=code&redirect_uri=${encodeURIComponent(redirectUrl)}&scope=user_default%20offline_access&state=${state}`;
 
@@ -32,9 +32,6 @@ async function connectToQlik() {
     const urlParams = new URLSearchParams(window.location.search);
     const authCode = urlParams.get('code');
     let accessToken = sessionStorage.getItem('qlik_token');
-
-    // Dynamic Redirect for Exchange too
-    const currentRedirectUri = window.location.href.split('?')[0];
 
     try {
         // STEP A: Try Guest Token (Recruiter Mode) AUTOMATICALLY
@@ -74,7 +71,7 @@ async function connectToQlik() {
                     clientId: CONFIG.clientId,
                     clientSecret: CONFIG.clientSecret,
                     code: authCode,
-                    redirectUri: currentRedirectUri // Must match initiate
+                    redirectUri: window.location.origin + '/qlik/' // Static /qlik/
                 })
             });
 
