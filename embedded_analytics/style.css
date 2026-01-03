@@ -1,27 +1,26 @@
-/* --- MODERN CLEAN DASHBOARD THEME --- */
+/* --- QLIK CLOUD PREMIUM THEME --- */
 :root {
-    --sidebar-width: 260px;
-    --header-height: 64px;
-    --bg-color: #F8F9FA;
-    --card-bg: #FFFFFF;
-    --primary-color: #2C3E50;
-    /* Dark Slate */
-    --accent-color: #3498DB;
-    /* Bright Blue */
-    --text-primary: #333333;
-    --text-secondary: #7F8C8D;
-    --border-color: #E0E0E0;
-    --success-color: #27AE60;
-    /* Green */
-    --danger-color: #C0392B;
-    /* Red */
+    --qlik-green: #009845;
+    --qlik-dark-green: #007a37;
+    --sidebar-bg: #333333;
+    /* DARK SIDEBAR */
+    --sidebar-text: #e0e0e0;
+    --sidebar-active: #404040;
+    --bg-color: #F7F7F7;
+    /* CANVAS GREY */
+    --card-bg: #ffffff;
+    --text-primary: #1a1a1a;
+    /* HIGH CONTRAST */
+    --text-secondary: #666666;
+    --border-color: #d9d9d9;
 }
 
 * {
     box-sizing: border-box;
     margin: 0;
     padding: 0;
-    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    font-family: 'Inter', sans-serif;
+    /* FORCE INTER */
 }
 
 body {
@@ -29,12 +28,6 @@ body {
     color: var(--text-primary);
     height: 100vh;
     overflow: hidden;
-    margin: 0;
-    font-family: 'Inter', sans-serif;
-    background-color: var(--bg-color);
-    color: var(--text-primary);
-    overflow: hidden;
-    /* App-like feel */
 }
 
 /* Layout */
@@ -45,52 +38,55 @@ body {
 
 /* Sidebar */
 .sidebar {
-    width: 260px;
-    background-color: var(--qlik-dark);
-    color: #fff;
+    width: 240px;
+    background-color: var(--sidebar-bg);
+    color: var(--sidebar-text);
     display: flex;
     flex-direction: column;
-    padding: 24px;
-    box-shadow: 4px 0 10px rgba(0, 0, 0, 0.05);
+    padding: 16px 0;
+    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
 }
 
 .brand-section {
-    font-size: 20px;
+    font-size: 16px;
     font-weight: 600;
+    color: #fff;
     display: flex;
     align-items: center;
     gap: 12px;
-    margin-bottom: 40px;
-    letter-spacing: -0.5px;
+    padding: 0 24px 24px;
+    margin-bottom: 20px;
+    border-bottom: 1px solid #444;
 }
 
 .brand-section span {
     font-size: 24px;
 }
 
-.nav-links .nav-link {
-    padding: 12px 16px;
-    margin-bottom: 8px;
-    border-radius: 6px;
+.nav-link {
+    padding: 12px 24px;
     cursor: pointer;
+    transition: all 0.2s;
     font-size: 14px;
     font-weight: 500;
-    color: #999;
-    transition: all 0.2s;
+    color: #ccc;
+    /* Default text color in dark sidebar */
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 12px;
 }
 
 .nav-link:hover {
-    background-color: rgba(255, 255, 255, 0.05);
+    background-color: #444;
     color: #fff;
 }
 
 .nav-link.active {
-    background-color: rgba(0, 152, 69, 0.15);
-    color: var(--qlik-green);
-    border-left: 3px solid var(--qlik-green);
+    background-color: #1a1a1a;
+    color: #fff;
+    border-left: 4px solid var(--qlik-green);
+    padding-left: 20px;
+    /* Adjust for border */
 }
 
 .sidebar-footer {

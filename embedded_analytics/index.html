@@ -18,16 +18,16 @@
         <!-- SIDEBAR -->
         <aside class="sidebar">
             <div class="brand-section">
-                <span>📦</span> SupplyChain.AI
+                <span>📦</span> Qlik Supply Chain
             </div>
             <nav class="nav-links">
-                <div class="nav-link active">
-                    <span>📊</span> Executive Overview
+                <div class="nav-link active" id="nav-exec">
+                    <span>📈</span> Performance
                 </div>
-                <div class="nav-link">
+                <div class="nav-link" id="nav-logic">
                     <span>🚚</span> Logistics Tower
                 </div>
-                <div class="nav-link">
+                <div class="nav-link" id="nav-inv">
                     <span>🏭</span> Inventory Health
                 </div>
                 <div class="nav-link">
@@ -35,7 +35,11 @@
                 </div>
             </nav>
             <div class="sidebar-footer">
-                v2.4.0 Connected to Qlik Cloud
+                <div style="font-size:10px; opacity:0.7;">v2.5.0 Connected to Qlik Cloud</div>
+                <!-- LOG CONTAINER -->
+                <div id="ui-log"
+                    style="font-family:monospace; font-size:10px; color:#aaa; margin-top:10px; max-height:100px; overflow-y:auto; word-break:break-all;">
+                </div>
             </div>
         </aside>
 
@@ -44,16 +48,32 @@
             <!-- HEADER -->
             <header class="top-header">
                 <div class="page-title">
-                    <h1>Executive Command Center</h1>
-                    <p>Real-time performance metrics</p>
+                    <h1>Supply Chain Performance</h1>
+                    <p>Global Analytics & KPIs</p>
                 </div>
                 <div class="header-actions">
-                    <div class="filter-row">
-                        <button class="btn-filter" id="btn-west">Region: West</button>
-                        <button class="btn-filter" id="btn-east">Region: East</button>
-                        <button class="btn-filter" id="btn-clear">Clear Filters</button>
+                    <!-- QLIK SELECTIONS BAR (Replaces Buttons) -->
+                    <div style="display:flex; gap:10px; align-items:center;">
+                        <span style="font-size:12px; font-weight:600; color:#555;">SELECTIONS:</span>
+                        <div class="selection-pill" onclick="document.getElementById('btn-west').click()"
+                            style="cursor:pointer; background:#e0e0e0; padding:4px 8px; border-radius:4px; font-size:12px;">
+                            Region: West
+                        </div>
+                        <div class="selection-pill" onclick="document.getElementById('btn-east').click()"
+                            style="cursor:pointer; background:#e0e0e0; padding:4px 8px; border-radius:4px; font-size:12px;">
+                            Region: East
+                        </div>
+                        <div class="selection-pill" onclick="document.getElementById('btn-clear').click()"
+                            style="cursor:pointer; background:#fff; border:1px solid #ccc; padding:4px 8px; border-radius:4px; font-size:12px;">
+                            Clear
+                        </div>
                     </div>
-                    <div class="user-badge">Admin User</div>
+                    <!-- Hidden Buttons for Logic Compatibility -->
+                    <div style="display:none;">
+                        <button id="btn-west">W</button>
+                        <button id="btn-east">E</button>
+                        <button id="btn-clear">C</button>
+                    </div>
                 </div>
             </header>
 
