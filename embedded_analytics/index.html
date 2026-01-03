@@ -47,11 +47,18 @@
                 </div>
             </nav>
             <div class="sidebar-footer">
-                <!-- DEBUG LOG RESTORED -->
-                <div id="ui-log"
-                    style="font-family:monospace; font-size:10px; color:#aaa; margin-top:10px; max-height:150px; overflow-y:auto; word-break:break-all; padding:5px; background:rgba(0,0,0,0.2);">
+                <div class="sidebar-footer">
+                    <div style="padding:0 10px; margin-bottom:5px;">
+                        <button onclick="sessionStorage.clear(); window.location.reload();"
+                            style="width:100%; background:#333; color:#aaa; border:1px solid #444; padding:4px; font-size:10px; cursor:pointer; border-radius:4px;">
+                            ♻️ Reset Connection
+                        </button>
+                    </div>
+                    <!-- DEBUG LOG RESTORED -->
+                    <div id="ui-log"
+                        style="font-family:monospace; font-size:10px; color:#aaa; margin-top:5px; max-height:150px; overflow-y:auto; word-break:break-all; padding:5px; background:rgba(0,0,0,0.2);">
+                    </div>
                 </div>
-            </div>
         </aside>
 
         <!-- MAIN CONTENT -->
