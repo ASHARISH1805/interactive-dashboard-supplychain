@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
 
-    <!-- CDN Libraries -->
+    <!-- CDN Libraries (No NPM needed) -->
     <script src="https://unpkg.com/enigma.js@2.4.0/enigma.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
@@ -21,17 +21,22 @@
                 <span>📦</span> Qlik Supply Chain
             </div>
             <nav class="nav-links">
-                <div class="nav-link active" id="nav-desc"><span>📊</span> 1. Descriptive</div>
-                <div class="nav-link" id="nav-diag"><span>🔍</span> 2. Diagnostic</div>
-                <div class="nav-link" id="nav-supply"><span>🚚</span> 3. Supply Chain</div>
-                <div class="nav-link" id="nav-cust"><span>👥</span> 4. Customer</div>
-                <div class="nav-link" id="nav-prod"><span>🏷️</span> 5. Product</div>
-                <div class="nav-link" id="nav-geo"><span>🌍</span> 6. Geographic</div>
-                <div class="nav-link" id="nav-pred"><span>🔮</span> 7. Predictive</div>
-                <div class="nav-link" id="nav-pres"><span>💡</span> 8. Prescriptive</div>
+                <div class="nav-link active" id="nav-exec">
+                    <span>📊</span> Executive Overview
+                </div>
+                <div class="nav-link" id="nav-logic">
+                    <span>🚚</span> Logistics Tower
+                </div>
+                <div class="nav-link" id="nav-inv">
+                    <span>🏭</span> Inventory Health
+                </div>
+                <div class="nav-link">
+                    <span>⚙️</span> Settings
+                </div>
             </nav>
             <div class="sidebar-footer">
                 <div style="font-size:10px; opacity:0.7;">v2.4.0 Connected to Qlik Cloud</div>
+                <!-- LOG CONTAINER MOVED HERE -->
                 <div id="ui-log"
                     style="font-family:monospace; font-size:10px; color:#aaa; margin-top:10px; max-height:100px; overflow-y:auto; word-break:break-all;">
                 </div>
@@ -52,6 +57,7 @@
                         <button class="btn-filter" id="btn-east">Region: East</button>
                         <button class="btn-filter" id="btn-clear">Clear Filters</button>
                     </div>
+                    <!-- REMOVED ADMIN BADGE -->
                 </div>
             </header>
 
@@ -67,164 +73,120 @@
             <!-- DASHBOARD GRID CONTAINER -->
             <div class="dashboard-scroll">
 
-                <!-- 1. DESCRIPTIVE ANALYTICS -->
-                <div id="view-desc">
-                    <div class="card span-4 h-kpi" style="margin-bottom:10px;">
-                        <h3>📊 Descriptive Analytics</h3>
-                        <p>Key Performance Indicators and Historical Trends. <strong style="color:#2563eb;">Insight:
-                                Revenue is up 12% MoM due to strong Tech category performance.</strong></p>
-                    </div>
+                <!-- VIEW 1: EXECUTIVE (Default) -->
+                <!-- VIEW 1: EXECUTIVE (Default) -->
+                <div id="grid-executive">
+
+                    <!-- TOP KPI ID (Fixed Height Row) -->
                     <div class="dashboard-grid kpi-row">
+                        <!-- KPI 1 -->
                         <div class="card span-1 h-kpi">
-                            <div class="card-title">Total Sales</div>
+                            <div class="card-title">Total Revenue</div>
                             <div class="metric-value" id="kpi-sales">---</div>
-                            <div class="card-footer"><span class="trend-badge up">▲ 12%</span> vs last month</div>
+                            <div class="card-footer"><span class="trend-badge up">▲ 12.4%</span> vs last month</div>
                         </div>
+
+                        <!-- KPI 2 -->
                         <div class="card span-1 h-kpi">
                             <div class="card-title">Profit Margin</div>
                             <div class="metric-value" id="kpi-margin">---</div>
                             <div class="card-footer"><span class="trend-badge down">▼ 1.2%</span> vs target</div>
                         </div>
+
+                        <!-- KPI 3 -->
                         <div class="card span-1 h-kpi">
-                            <div class="card-title">Avg Delivery</div>
+                            <div class="card-title">Logistics Cost</div>
                             <div class="metric-value" id="kpi-otif">---</div>
-                            <div class="card-footer"><span class="trend-badge">4.2 Days</span></div>
+                            <div class="card-footer"><span class="trend-badge up">▲ 5.0%</span> efficiency</div>
                         </div>
+
+                        <!-- KPI 4 -->
                         <div class="card span-1 h-kpi">
                             <div class="card-title">Avg Discount</div>
                             <div class="metric-value" id="kpi-orders">---</div>
-                            <div class="card-footer">Given to customers</div>
+                            <div class="card-footer" style="font-size:12px; color:#aaa;">Given to customers</div>
                         </div>
                     </div>
-                    <div class="dashboard-grid">
-                        <div class="card span-4 h-chart">
-                            <div class="card-title">Monthly Sales & Profit Trend</div>
-                            <div class="chart-container"><canvas id="chart-trend"></canvas></div>
-                        </div>
-                    </div>
-                </div>
 
-                <!-- 2. DIAGNOSTIC ANALYTICS -->
-                <div id="view-diag" style="display:none;">
-                    <div class="card span-4 h-kpi" style="margin-bottom:10px;">
-                        <h3>🔍 Diagnostic Analytics</h3>
-                        <p>Understanding "Why" things happened. <strong style="color:#ef4444;">Insight: High discounts
-                                in the 'Central' region are eroding profit margins (-1.2% variance).</strong></p>
-                    </div>
+                    <!-- CHARTS GRID (Auto Height) -->
                     <div class="dashboard-grid">
-                        <div class="card span-2 h-chart">
-                            <div class="card-title">Profit vs Sales (Whale Curve)</div>
-                            <div class="chart-container"><canvas id="chart-scatter"></canvas></div>
-                        </div>
-                        <div class="card span-2 h-chart">
-                            <div class="card-title">Discount Impact by Region</div>
-                            <div class="chart-container"><canvas id="chart-radar"></canvas></div>
-                        </div>
-                    </div>
-                </div>
 
-                <!-- 3. SUPPLY CHAIN PERFORMANCE -->
-                <div id="view-supply" style="display:none;">
-                    <div class="card span-4 h-kpi" style="margin-bottom:10px;">
-                        <h3>🚚 Supply Chain Performance</h3>
-                        <p>Efficiency, Cost, and Speed Analysis. <strong style="color:#ea580c;">Insight: "Same Day"
-                                shipping mode averages 4.2 days, missing target by 3 days.</strong></p>
-                    </div>
-                    <div class="dashboard-grid">
+                        <!-- CHART 1: PARETO COMBO -->
                         <div class="card span-2 h-chart">
-                            <div class="card-title">Delivery Efficiency (Days by Mode)</div>
-                            <div class="chart-container"><canvas id="chart-ship-time"></canvas></div>
+                            <div class="card-title">
+                                <span>Pareto Analysis (Sales vs Profit)</span>
+                            </div>
+                            <div class="chart-container">
+                                <canvas id="chart-combo"></canvas>
+                            </div>
                         </div>
-                        <div class="card span-2 h-chart">
-                            <div class="card-title">Shipping Cost Analysis ($)</div>
-                            <div class="chart-container"><canvas id="chart-ship-cost"></canvas></div>
-                        </div>
-                    </div>
-                </div>
 
-                <!-- 4. CUSTOMER ANALYTICS -->
-                <div id="view-cust" style="display:none;">
-                    <div class="card span-4 h-kpi" style="margin-bottom:10px;">
-                        <h3>👥 Customer & Market Analytics</h3>
-                        <p>Segmentation and Profitability. <strong style="color:#059669;">Insight: "Consumer" segment
-                                drives 50% of profit but has high churn risk in "Furniture".</strong></p>
-                    </div>
-                    <div class="dashboard-grid">
-                        <div class="card span-4 h-chart">
+                        <!-- CHART 2: CUSTOMER PROFITABILITY SCATTER (Values) -->
+                        <div class="card span-2 h-chart">
                             <div class="card-title">Customer Profitability Matrix</div>
-                            <div class="chart-container"><canvas id="chart-scatter-2"></canvas></div>
+                            <div class="chart-container">
+                                <canvas id="chart-scatter"></canvas>
+                            </div>
+                        </div>
+
+                        <!-- CHART 3: REGIONAL RADAR -->
+                        <div class="card span-2 h-chart">
+                            <div class="card-title">Regional Discount Discipline</div>
+                            <div class="chart-container">
+                                <canvas id="chart-radar"></canvas>
+                            </div>
+                        </div>
+
+                        <!-- CHART 4: REGIONAL MAP/BAR (Placeholder or reused) -->
+                        <div class="card span-2 h-chart">
+                            <div class="card-title">Regional Distribution</div>
+                            <div class="chart-container">
+                                <canvas id="chart-region"></canvas>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+                <!-- VIEW 2: LOGISTICS (Hidden by default) -->
+                <div class="dashboard-grid" id="grid-logistics" style="display:none;">
+                    <div class="card span-4 h-kpi"
+                        style="background:#f8fafc; border:1px solid #e2e8f0; justify-content:center;">
+                        <h2 style="color:#334155; margin-bottom:8px;">🚚 Logistics Control Tower</h2>
+                        <p style="font-size:14px; color:#64748b;">
+                            Analyzing carrier performance bottlenecks. <strong style="color:#ef4444;">Insight: "Same
+                                Day" shipping is underperforming.</strong>
+                        </p>
+                    </div>
+
+                    <div class="card span-2 h-chart">
+                        <div class="card-title">Delivery Efficiency (Days by Mode)</div>
+                        <div class="chart-container">
+                            <canvas id="chart-ship-time"></canvas>
+                        </div>
+                    </div>
+                    <div class="card span-2 h-chart">
+                        <div class="card-title">Shipping Cost Analysis ($)</div>
+                        <div class="chart-container">
+                            <canvas id="chart-ship-cost"></canvas>
                         </div>
                     </div>
                 </div>
 
-                <!-- 5. PRODUCT ANALYTICS -->
-                <div id="view-prod" style="display:none;">
-                    <div class="card span-4 h-kpi" style="margin-bottom:10px;">
-                        <h3>🏷️ Product & Portfolio Analytics</h3>
-                        <p>Category Contribution and Margin Analysis. <strong style="color:#7c3aed;">Insight: "Tables"
-                                are loss-makers despite high revenue. Consider rationalization.</strong></p>
+                <!-- VIEW 3: INVENTORY (Hidden by default) -->
+                <!-- VIEW 3: INVENTORY (Hidden by default) -->
+                <div class="dashboard-grid" id="grid-inventory" style="display:none;">
+                    <div class="card span-4 h-kpi"
+                        style="background:#f0f9f4; border:1px solid #d1fae5; justify-content:center;">
+                        <h2 style="color:#064e3b; margin-bottom:8px;">🏭 Inventory Demand Forecast</h2>
+                        <p style="font-size:14px; color:#64748b;">
+                            Predictive demand analysis based on monthly sales trends.
+                        </p>
                     </div>
-                    <div class="dashboard-grid">
-                        <div class="card span-4 h-chart">
-                            <div class="card-title">Pareto Analysis (80/20 Rule)</div>
-                            <div class="chart-container"><canvas id="chart-combo"></canvas></div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- 6. GEOGRAPHIC ANALYTICS -->
-                <div id="view-geo" style="display:none;">
-                    <div class="card span-4 h-kpi" style="margin-bottom:10px;">
-                        <h3>🌍 Geographic Analytics</h3>
-                        <p>Regional Performance and Logistics Bottlenecks. <strong style="color:#d97706;">Insight: West
-                                Region has the highest shipping costs due to distance.</strong></p>
-                    </div>
-                    <div class="dashboard-grid">
-                        <div class="card span-4 h-chart">
-                            <div class="card-title">Sales by Region & State</div>
-                            <div class="chart-container"><canvas id="chart-region"></canvas></div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- 7. PREDICTIVE ANALYTICS -->
-                <div id="view-pred" style="display:none;">
-                    <div class="card span-4 h-kpi" style="background:#f0f9ff; border:1px solid #bae6fd;">
-                        <h3>🔮 Predictive Analytics (Forecast)</h3>
-                        <p>AI-Driven Forecasts using <b>ARIMA</b> and <b>XGBoost</b>. <strong
-                                style="color:#0284c7;">Forecast: Demand expected to spike +15% in Q4 (Holiday
-                                Season).</strong></p>
-                    </div>
-                    <div class="dashboard-grid">
-                        <div class="card span-4 h-chart">
-                            <div class="card-title">Future Demand Forecast (AI Prediction)</div>
-                            <div class="chart-container"><canvas id="chart-forecast-2"></canvas></div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- 8. PRESCRIPTIVE ANALYTICS -->
-                <div id="view-pres" style="display:none;">
-                    <div class="card span-4 h-kpi" style="background:#fcfebd; border:1px solid #fcd34d;">
-                        <h3>💡 Prescriptive Analytics (Action Plan)</h3>
-                        <p>Recommended actions to optimize Supply Chain Performance.</p>
-                    </div>
-                    <div class="dashboard-grid">
-                        <div class="card span-2 h-kpi">
-                            <h3 style="color:#dc2626;">🚨 Issue: High Shipping Variance</h3>
-                            <p style="margin-top:10px; font-size:14px;">"Same Day" is failing SLA (4+ Days).</p>
-                            <hr style="border:0; border-top:1px solid #eee; margin:10px 0;">
-                            <strong style="color:#16a34a;">✅ Recommendation:</strong>
-                            <p style="font-size:13px; color:#555;">Switch 40% of "Same Day" volume to "First Class" to
-                                save <b>$12k/month</b> with similar speed.</p>
-                        </div>
-                        <div class="card span-2 h-kpi">
-                            <h3 style="color:#d97706;">⚠️ Issue: Low Margin Categories</h3>
-                            <p style="margin-top:10px; font-size:14px;">"Tables" are generating negative profit.</p>
-                            <hr style="border:0; border-top:1px solid #eee; margin:10px 0;">
-                            <strong style="color:#16a34a;">✅ Recommendation:</strong>
-                            <p style="font-size:13px; color:#555;">Increase price by <b>5%</b> or renegotiate supplier
-                                contracts for "Tables" immediately.</p>
+                    <div class="card span-4 h-chart">
+                        <div class="card-title">Monthly Demand Variance</div>
+                        <div class="chart-container">
+                            <canvas id="chart-forecast"></canvas>
                         </div>
                     </div>
                 </div>
@@ -234,8 +196,19 @@
     </div>
 
     <!-- SCRIPTS -->
+    <script src="mock-app.js"></script>
     <script src="connect.js"></script>
     <script src="index.js"></script>
+    <script>
+        // Simple Console Redirect
+        window.log = function (msg) {
+            const el = document.getElementById('debug-console');
+            if (el) {
+                el.innerHTML = `> ${msg}<br>` + el.innerHTML.substring(0, 500); // Keep styling clean
+            }
+            console.log(msg);
+        }
+    </script>
 </body>
 
 </html>

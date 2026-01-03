@@ -10,7 +10,7 @@ const CONFIG = {
 let app = null;
 
 function log(msg) {
-    const el = document.getElementById('ui-log'); // Updated to Sidebar Log
+    const el = document.getElementById('debug-console');
     if (el) { el.innerHTML += `> ${msg}<br>`; el.scrollTop = el.scrollHeight; }
     console.log(msg);
 }
@@ -34,7 +34,30 @@ async function connectToQlik() {
     let accessToken = sessionStorage.getItem('qlik_token'); // Use stored token if available
 
     try {
-        // If we have a new Code, exchange it for a Token
+        // STEP A: Try Guest Token (Recruiter Mode) AUTOMATICALLY
+        if (!authCode && !accessToken) {
+            log('🎫 Attempting Guest Access (Recruiter Mode)...');
+            const guestRes = await fetch('/api/qlik/guest', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    host: CONFIG.url,
+                    clientId: CONFIG.clientId,
+                    clientSecret: CONFIG.clientSecret
+                })
+            });
+
+            if (guestRes.ok) {
+                const guestTokens = await guestRes.json();
+                accessToken = guestTokens.access_token;
+                sessionStorage.setItem('qlik_token', accessToken);
+                log('✅ Guest Access Granted!');
+            } else {
+                log('ℹ️ No Guest Session found. Owner login required.');
+            }
+        }
+
+        // STEP B: If we have a new IDP Code, exchange it (Owner Mode)
         if (authCode) {
             log('🔑 Exchanging Code for Token...');
 
@@ -76,8 +99,7 @@ async function connectToQlik() {
         // STRATEGY: Use Local WebSocket Proxy to bypass Browser Origin Blocks
         // We connect to 'ws://localhost:3000/qlik-ws/...' and the Node server tunnels to Qlik.
         // Also remove 'qlik-web-integration-id' since we are proxied.
-        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-        const wsUrl = `${protocol}//${window.location.host}/qlik-ws/app/${CONFIG.appId}?qlik-client-id=${CONFIG.clientId}&access_token=${accessToken}`;
+        const wsUrl = `ws://${window.location.host}/qlik-ws/app/${CONFIG.appId}?qlik-client-id=${CONFIG.clientId}&access_token=${accessToken}`;
 
         log(`🔗 Dialing Local Proxy: ${wsUrl}...`);
         const session = enigma.create({ schema, url: wsUrl });

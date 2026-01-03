@@ -18,16 +18,16 @@
         <!-- SIDEBAR -->
         <aside class="sidebar">
             <div class="brand-section">
-                <span>📦</span> Qlik Supply Chain
+                <span>📦</span> SupplyChain.AI
             </div>
             <nav class="nav-links">
-                <div class="nav-link active" id="nav-exec">
+                <div class="nav-link active">
                     <span>📊</span> Executive Overview
                 </div>
-                <div class="nav-link" id="nav-logic">
+                <div class="nav-link">
                     <span>🚚</span> Logistics Tower
                 </div>
-                <div class="nav-link" id="nav-inv">
+                <div class="nav-link">
                     <span>🏭</span> Inventory Health
                 </div>
                 <div class="nav-link">
@@ -35,11 +35,7 @@
                 </div>
             </nav>
             <div class="sidebar-footer">
-                <div style="font-size:10px; opacity:0.7;">v2.4.0 Connected to Qlik Cloud</div>
-                <!-- LOG CONTAINER MOVED HERE -->
-                <div id="ui-log"
-                    style="font-family:monospace; font-size:10px; color:#aaa; margin-top:10px; max-height:100px; overflow-y:auto; word-break:break-all;">
-                </div>
+                v2.4.0 Connected to Qlik Cloud
             </div>
         </aside>
 
@@ -57,7 +53,7 @@
                         <button class="btn-filter" id="btn-east">Region: East</button>
                         <button class="btn-filter" id="btn-clear">Clear Filters</button>
                     </div>
-                    <!-- REMOVED ADMIN BADGE -->
+                    <div class="user-badge">Admin User</div>
                 </div>
             </header>
 
@@ -150,47 +146,42 @@
 
                 <!-- VIEW 2: LOGISTICS (Hidden by default) -->
                 <div class="dashboard-grid" id="grid-logistics" style="display:none;">
-                    <div class="card span-4 h-kpi"
-                        style="background:#f8fafc; border:1px solid #e2e8f0; justify-content:center;">
-                        <h2 style="color:#334155; margin-bottom:8px;">🚚 Logistics Control Tower</h2>
-                        <p style="font-size:14px; color:#64748b;">
-                            Analyzing carrier performance bottlenecks. <strong style="color:#ef4444;">Insight: "Same
-                                Day" shipping is underperforming.</strong>
+                    <div class="card span-4 h-kpi" style="background:#eef2f7; border:1px dashed #ccc;">
+                        <h2 style="color:#555;">🚚 Logistics Control Tower</h2>
+                        <p style="font-size:12px; color:#777;">Tracking shipment lifecycle and carrier performance.
                         </p>
                     </div>
 
                     <div class="card span-2 h-chart">
-                        <div class="card-title">Delivery Efficiency (Days by Mode)</div>
-                        <div class="chart-container">
-                            <canvas id="chart-ship-time"></canvas>
-                        </div>
+                        <div class="card-title">Late Deliveries by Region</div>
+                        <div style="flex:1; display:flex; align-items:center; justify-content:center; color:#ccc;">[
+                            MAP PLACEHOLDER ]</div>
                     </div>
                     <div class="card span-2 h-chart">
-                        <div class="card-title">Shipping Cost Analysis ($)</div>
-                        <div class="chart-container">
-                            <canvas id="chart-ship-cost"></canvas>
-                        </div>
+                        <div class="card-title">Carrier Cost Analysis</div>
+                        <div style="flex:1; display:flex; align-items:center; justify-content:center; color:#ccc;">[
+                            COST GRID PLACEHOLDER ]</div>
                     </div>
                 </div>
 
-                <!-- VIEW 3: INVENTORY (Hidden by default) -->
                 <!-- VIEW 3: INVENTORY (Hidden by default) -->
                 <div class="dashboard-grid" id="grid-inventory" style="display:none;">
-                    <div class="card span-4 h-kpi"
-                        style="background:#f0f9f4; border:1px solid #d1fae5; justify-content:center;">
-                        <h2 style="color:#064e3b; margin-bottom:8px;">🏭 Inventory Demand Forecast</h2>
-                        <p style="font-size:14px; color:#64748b;">
-                            Predictive demand analysis based on monthly sales trends.
-                        </p>
+                    <div class="card span-4 h-kpi" style="background:#f0f9f4; border:1px dashed #ccc;">
+                        <h2 style="color:#555;">🏭 Inventory Health</h2>
+                        <p style="font-size:12px; color:#777;">Real-time stock levels, predicted stockouts, and
+                            turnover.</p>
                     </div>
                     <div class="card span-4 h-chart">
-                        <div class="card-title">Monthly Demand Variance</div>
-                        <div class="chart-container">
-                            <canvas id="chart-forecast"></canvas>
-                        </div>
+                        <div class="card-title">Stock Level Forecast (AI Prediction)</div>
+                        <div style="flex:1; display:flex; align-items:center; justify-content:center; color:#ccc;">[
+                            FORECAST CHART PLACEHOLDER ]</div>
                     </div>
                 </div>
 
+                <!-- DEBUG (Safe at bottom) -->
+                <div id="debug-console"
+                    style="border-top:1px solid #eee; padding-top:20px; font-family:monospace; font-size:10px; color:#aaa;">
+                </div>
             </div>
         </main>
     </div>

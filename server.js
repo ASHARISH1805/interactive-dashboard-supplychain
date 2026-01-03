@@ -59,12 +59,13 @@ app.get('/health', async (req, res) => {
 });
 
 // Qlik OAuth Token Exchange Proxy (Bypasses CORS & IPv6 Timeouts)
+// Qlik OAuth Token Exchange Proxy (Bypasses CORS & IPv6 Timeouts)
+const fs = require('fs');
+const REFRESH_TOKEN_FILE = path.join(__dirname, 'qlik_refresh_token.txt');
+
 app.post('/api/qlik/token', (req, res) => {
     const { code, clientId, clientSecret, host, redirectUri } = req.body;
     console.log('🔄 Exchanging Qlik Token for host:', host);
-
-    // Debug Params (Safe Logging)
-    console.log('📝 Params:', { clientId, redirectUri, codeReceived: !!code });
 
     const payload = JSON.stringify({
         client_id: clientId,
@@ -94,7 +95,15 @@ app.post('/api/qlik/token', (req, res) => {
             if (tokenRes.statusCode >= 200 && tokenRes.statusCode < 300) {
                 console.log('✅ Token acquired successfully');
                 try {
-                    res.json(JSON.parse(data));
+                    const json = JSON.parse(data);
+
+                    // SAVE REFRESH TOKEN PERMANENTLY
+                    if (json.refresh_token) {
+                        fs.writeFileSync(REFRESH_TOKEN_FILE, json.refresh_token);
+                        console.log('💾 Refresh Token Saved for Guest Access!');
+                    }
+
+                    res.json(json);
                 } catch (e) {
                     res.status(500).send('Invalid JSON from Qlik');
                 }
@@ -114,24 +123,22 @@ app.post('/api/qlik/token', (req, res) => {
     tokenReq.end();
 });
 
-// Auto-Login Endpoint using stored Refresh Token
-app.get('/api/qlik/auto-login', (req, res) => {
-    const refreshToken = process.env.QLIK_REFRESH_TOKEN;
-
-    if (!refreshToken) {
-        return res.status(404).json({ error: 'No refresh token configured on server.' });
+// GUEST ACCESS ENDPOINT (For Recruiters)
+app.post('/api/qlik/guest', (req, res) => {
+    if (!fs.existsSync(REFRESH_TOKEN_FILE)) {
+        return res.status(404).json({ error: 'No Guest Session Available. Owner must login once first.' });
     }
 
-    console.log('🔄 Attempting Auto-Refresh with Token...');
-    const clientId = '019b758d9a44d2ab60270d035c71e171'; // Move to env in future
-    const clientSecret = '6fb1ef439ea0f128670a6a65e8f3b0b791567c8b48120cc27e73ffee5d746919';
-    const host = 'flo13jpumt442e8.in.qlikcloud.com';
+    const refreshToken = fs.readFileSync(REFRESH_TOKEN_FILE, 'utf8').trim();
+    const { clientId, clientSecret, host } = req.body;
+
+    console.log('🎫 Guest Access Requested. Using saved Refresh Token...');
 
     const payload = JSON.stringify({
         client_id: clientId,
         client_secret: clientSecret,
-        grant_type: 'refresh_token',
-        refresh_token: refreshToken
+        refresh_token: refreshToken,
+        grant_type: 'refresh_token'
     });
 
     const options = {
@@ -147,26 +154,23 @@ app.get('/api/qlik/auto-login', (req, res) => {
         rejectUnauthorized: false
     };
 
-    const refreshReq = https.request(options, (tokenRes) => {
+    const tokenReq = https.request(options, (tokenRes) => {
         let data = '';
         tokenRes.on('data', (chunk) => data += chunk);
         tokenRes.on('end', () => {
             if (tokenRes.statusCode >= 200 && tokenRes.statusCode < 300) {
-                console.log('✅ Auto-Renewal Successful');
+                console.log('✅ Guest Access Token Generated');
                 res.json(JSON.parse(data));
             } else {
-                console.error(`❌ Auto-Renewal Failed (${tokenRes.statusCode}):`, data);
+                console.error(`❌ Guest Access Failed (${tokenRes.statusCode}):`, data);
                 res.status(tokenRes.statusCode).send(data);
             }
         });
     });
 
-    refreshReq.on('error', (err) => {
-        res.status(500).json({ error: err.message });
-    });
-
-    refreshReq.write(payload);
-    refreshReq.end();
+    tokenReq.on('error', (err) => res.status(500).json({ error: err.message }));
+    tokenReq.write(payload);
+    tokenReq.end();
 });
 
 // Start server with WebSocket Proxy
