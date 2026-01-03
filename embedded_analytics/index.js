@@ -155,15 +155,17 @@ function updateSelectionBar(field, value) {
 // NAVIGATION LOGIC
 document.addEventListener('DOMContentLoaded', () => {
     const views = {
+        'nav-intro': 'view-intro',  // Added Intro
         'nav-overview': 'view-overview',
         'nav-sales': 'view-sales',
         'nav-shipping': 'view-shipping',
         'nav-products': 'view-products',
-        'nav-settings': 'view-settings' // Added Settings
+        'nav-settings': 'view-settings'
     };
 
     // Map Nav IDs to Titles for Dynamic Header
     const titles = {
+        'nav-intro': 'Project Architecture|Dataset Specifications & Analytical Strategy',
         'nav-overview': 'Overview|Supply Chain Key Performance Indicators',
         'nav-sales': 'Sales Analysis|Revenue Trends & Customer Profitability',
         'nav-shipping': 'Logistics Tower|Carrier Costs & Delivery Performance',

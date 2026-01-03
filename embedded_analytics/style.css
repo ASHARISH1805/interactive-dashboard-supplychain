@@ -365,8 +365,30 @@ input:checked+.slider:before {
     color: var(--accent-color);
 }
 
-.chart-container .btn-filter.active {
-    background: var(--accent-color);
-    color: white;
-    border-color: var(--accent-color);
+/* Pill Badges for Intro Specs */
+.pill-badge {
+    background: #f0f0f0;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+    color: #555;
+    border: 1px solid #e0e0e0;
+}
+
+.pill-badge.green {
+    background: #E6F8EC;
+    color: #009845;
+    border-color: #A3D9B5;
+}
+
+.pill-badge.red {
+    background: #FDE8E9;
+    color: #D13438;
+    border-color: #F0B3B5;
+}
+
+.pill-badge.blue {
+    background: #EBF3FC;
+    color: #0078D4;
+    border-color: #B3D6F2;
 }

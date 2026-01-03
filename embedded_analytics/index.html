@@ -21,6 +21,9 @@
                 <span>📦</span> Qlik Analytical
             </div>
             <nav class="nav-links">
+                <div class="nav-link" id="nav-intro">
+                    <span>📘</span> Project Guide
+                </div>
                 <div class="nav-link active" id="nav-overview">
                     <span>📊</span> Overview
                 </div>
@@ -89,10 +92,110 @@
                 <div style="margin-left:auto; font-size:11px; color:#aaa;">Last Updated: Just Now</div>
             </div>
 
-            <!-- DASHBOARD GRID CONTAINER -->
+            <!-- DASHBOARD SCROLL AREA -->
             <div class="dashboard-scroll">
 
-                <!-- VIEW 1: EXECUTIVE (Default) -->
+                <!-- 0. PROJECT GUIDE (Intro) -->
+                <div id="view-intro" class="view-section" style="display:none;">
+                    <div class="dashboard-grid">
+
+                        <!-- HERO CARD -->
+                        <div class="card span-4"
+                            style="background: linear-gradient(135deg, #009845 0%, #006030 100%); color:white; border:none;">
+                            <h2 style="font-size:24px; margin-bottom:10px;">🚀 Supply Chain Analytics Suite</h2>
+                            <p style="opacity:0.9; max-width:800px; line-height:1.5;">
+                                A production-grade analytics platform powered by the <strong>Qlik Associative
+                                    Engine</strong>.
+                                This project transforms raw transaction data into actionable intelligence, enabling
+                                organizations to optimize logistics,
+                                enhance profitability, and predict inventory needs.
+                            </p>
+                            <div style="margin-top:20px; display:flex; gap:15px;">
+                                <span
+                                    style="background:rgba(255,255,255,0.2); padding:5px 10px; border-radius:4px; font-size:12px;">9,994
+                                    Rows</span>
+                                <span
+                                    style="background:rgba(255,255,255,0.2); padding:5px 10px; border-radius:4px; font-size:12px;">21
+                                    Columns</span>
+                                <span
+                                    style="background:rgba(255,255,255,0.2); padding:5px 10px; border-radius:4px; font-size:12px;">4-Year
+                                    History</span>
+                            </div>
+                        </div>
+
+                        <!-- DATASET DETAILS -->
+                        <div class="card span-2">
+                            <div class="card-title">📂 The Dataset: "Superstore Sales"</div>
+                            <p style="font-size:13px; color:#555; line-height:1.6; margin-bottom:15px;">
+                                We utilize the industry-standard "Global Superstore" supply chain dataset. It represents
+                                a realistic retail environment tackling
+                                <strong>Logistics, Sales, and Profitability</strong> challenges.
+                            </p>
+                            <div style="font-size:12px; font-weight:600; color:#333; margin-bottom:8px;">KEY DIMENSIONS:
+                            </div>
+                            <div style="display:flex; flex-wrap:wrap; gap:8px;">
+                                <span class="pill-badge">🌍 Region</span>
+                                <span class="pill-badge">📦 Category</span>
+                                <span class="pill-badge">🚚 Ship Mode</span>
+                                <span class="pill-badge">🏙️ Segment</span>
+                            </div>
+                            <div
+                                style="font-size:12px; font-weight:600; color:#333; margin-bottom:8px; margin-top:15px;">
+                                KEY METRICS:</div>
+                            <div style="display:flex; flex-wrap:wrap; gap:8px;">
+                                <span class="pill-badge green">💰 Sales</span>
+                                <span class="pill-badge green">📈 Profit</span>
+                                <span class="pill-badge red">🔻 Discount</span>
+                                <span class="pill-badge blue">🚢 Shipping Cost</span>
+                            </div>
+                        </div>
+
+                        <!-- METHODOLOGY -->
+                        <div class="card span-2">
+                            <div class="card-title">🧠 Analytical Methodology</div>
+                            <ul style="font-size:13px; color:#555; line-height:1.8; padding-left:20px;">
+                                <li><strong>Pareto Analysis (80/20):</strong> Identifying the top 20% of products
+                                    driving 80% of profit.</li>
+                                <li><strong>Whale Curve Strategy:</strong> Detecting "profit-draining" customers who
+                                    generate sales but negative margin.</li>
+                                <li><strong>Logistics Efficiency:</strong> Analyzing correlation between shipping modes
+                                    (First Class vs Standard) and cost ratios.</li>
+                                <li><strong>Cluster Detection:</strong> Grouping regions by "Discount Discipline" to
+                                    stop value leakage.</li>
+                            </ul>
+                        </div>
+
+                        <!-- VALUE PROP -->
+                        <div class="card span-2">
+                            <div class="card-title">👤 For Users (Operational)</div>
+                            <div
+                                style="background:#f9f9f9; padding:15px; border-radius:6px; border-left:4px solid #3B82F6;">
+                                <h4 style="margin:0 0 5px 0; color:#3B82F6;">Tactical Decision Support</h4>
+                                <p style="font-size:12px; color:#666; margin:0;">
+                                    "Should I approve this discount?"<br>
+                                    "Which shipping method maintains margin?"<br>
+                                    Instantly filter by Region/Category to answer day-to-day fulfillment questions.
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="card span-2">
+                            <div class="card-title">👔 For Admins (Strategic)</div>
+                            <div
+                                style="background:#f9f9f9; padding:15px; border-radius:6px; border-left:4px solid #009845;">
+                                <h4 style="margin:0 0 5px 0; color:#009845;">Executive Command</h4>
+                                <p style="font-size:12px; color:#666; margin:0;">
+                                    "Where are we bleeding profit?"<br>
+                                    "Is our inventory mix healthy?"<br>
+                                    High-level KPIs and Trend Analysis to steer company policy and supplier
+                                    negotiations.
+                                </p>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
                 <!-- 1. OVERVIEW VIEW -->
                 <div id="view-overview" class="view-section">
                     <!-- KPIs -->
