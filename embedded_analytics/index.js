@@ -186,283 +186,357 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // ... (Existing Event Listeners)
 
-    // ----------------------------------------------------
-    // DATASET EXPLORER LOGIC
-    // ----------------------------------------------------
-    let dataModel = null;
+    // DEFAULT VIEW -> PROJECT GUIDE
+    const defaultNav = document.getElementById('nav-intro');
+    if (defaultNav) defaultNav.click();
 
-    async function updateDataView(limit) {
-        if (!app) return;
-        limit = parseInt(limit) || 50;
+}); // End DOMContentLoaded
 
-        const tbody = document.getElementById('data-table-body');
-        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; padding:20px; color:#aaa;">Fetching Records...</td></tr>';
 
-        try {
-            log(`💾 Fetching Top ${limit} Rows...`);
+// ----------------------------------------------------
+// DATASET EXPLORER LOGIC
+// ----------------------------------------------------
+let dataModel = null;
+let currentRows = []; // Store for sorting
+let sortAsc = true;
 
-            // Create Table HyperCube
-            dataModel = await app.createSessionObject({
-                qInfo: { qType: 'table' },
-                qHyperCubeDef: {
-                    qDimensions: [
-                        { qDef: { qFieldDefs: ['order_date'] } },
-                        { qDef: { qFieldDefs: ['customer_name'] } },
-                        { qDef: { qFieldDefs: ['region'] } },
-                        { qDef: { qFieldDefs: ['category'] } },
-                        { qDef: { qFieldDefs: ['product_name'] } }
-                    ],
-                    qMeasures: [
-                        { qDef: { qDef: 'Sum(sales)' } },
-                        { qDef: { qDef: 'Sum(profit)' } },
-                        { qDef: { qDef: 'Avg(discount)' } }
-                    ],
-                    qInitialDataFetch: [{ qTop: 0, qLeft: 0, qWidth: 8, qHeight: limit }]
-                }
-            });
+async function updateDataView(limit) {
+    if (!app) return;
+    limit = parseInt(limit) || 50;
 
-            const rows = (await dataModel.getLayout()).qHyperCube.qDataPages[0].qMatrix;
+    const tbody = document.getElementById('data-table-body');
+    // Update THEAD with 21 Columns
+    const thead = document.querySelector('.qlik-table thead tr');
+    thead.innerHTML = `
+        <th onclick="toggleSort(0)" style="cursor:pointer; padding:10px;">Row ID ↕</th>
+        <th onclick="toggleSort(1)" style="cursor:pointer; padding:10px;">Order ID ↕</th>
+        <th onclick="toggleSort(2)" style="cursor:pointer; padding:10px;">Order Date ↕</th>
+        <th onclick="toggleSort(3)" style="cursor:pointer; padding:10px;">Ship Date ↕</th>
+        <th onclick="toggleSort(4)" style="cursor:pointer; padding:10px;">Ship Mode ↕</th>
+        <th onclick="toggleSort(5)" style="cursor:pointer; padding:10px;">Customer ID ↕</th>
+        <th onclick="toggleSort(6)" style="cursor:pointer; padding:10px;">Customer Name ↕</th>
+        <th onclick="toggleSort(7)" style="cursor:pointer; padding:10px;">Segment ↕</th>
+        <th onclick="toggleSort(8)" style="cursor:pointer; padding:10px;">Country ↕</th>
+        <th onclick="toggleSort(9)" style="cursor:pointer; padding:10px;">City ↕</th>
+        <th onclick="toggleSort(10)" style="cursor:pointer; padding:10px;">State ↕</th>
+        <th onclick="toggleSort(11)" style="cursor:pointer; padding:10px;">Postal Code ↕</th>
+        <th onclick="toggleSort(12)" style="cursor:pointer; padding:10px;">Region ↕</th>
+        <th onclick="toggleSort(13)" style="cursor:pointer; padding:10px;">Product ID ↕</th>
+        <th onclick="toggleSort(14)" style="cursor:pointer; padding:10px;">Category ↕</th>
+        <th onclick="toggleSort(15)" style="cursor:pointer; padding:10px;">Sub-Category ↕</th>
+        <th onclick="toggleSort(16)" style="cursor:pointer; padding:10px;">Product Name ↕</th>
+        <th onclick="toggleSort(17)" style="cursor:pointer; padding:10px;">Sales ↕</th>
+        <th onclick="toggleSort(18)" style="cursor:pointer; padding:10px;">Quantity ↕</th>
+        <th onclick="toggleSort(19)" style="cursor:pointer; padding:10px;">Discount ↕</th>
+        <th onclick="toggleSort(20)" style="cursor:pointer; padding:10px;">Profit ↕</th>
+    `;
 
-            let html = '';
-            rows.forEach(r => {
-                const profit = r[6].qNum;
-                const profitColor = profit < 0 ? '#D13438' : '#009845';
+    tbody.innerHTML = '<tr><td colspan="21" style="text-align:center; padding:20px; color:#aaa;">Fetching Records...</td></tr>';
 
-                html += `
-                <tr style="border-bottom:1px solid #eee;">
-                    <td style="padding:8px;">${r[0].qText}</td>
-                    <td style="padding:8px; font-weight:500;">${r[1].qText}</td>
-                    <td style="padding:8px;">${r[2].qText}</td>
-                    <td style="padding:8px;">${r[3].qText}</td>
-                    <td style="padding:8px; width:250px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${r[4].qText}">${r[4].qText}</td>
-                    <td style="padding:8px; text-align:right;">${r[5].qText}</td>
-                    <td style="padding:8px; text-align:right; color:${profitColor}; font-weight:bold;">${r[6].qText}</td>
-                    <td style="padding:8px; text-align:center;">${(r[7].qNum * 100).toFixed(0)}%</td>
-                </tr>
-            `;
-            });
+    try {
+        log(`💾 Fetching Top ${limit} Rows (21 Columns)...`);
 
-            tbody.innerHTML = html;
-
-        } catch (e) {
-            tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; color:red;">Error: ${e.message}</td></tr>`;
-            console.error(e);
-        }
-    }
-
-    // ... (Existing Loop for Views) -> This remains unchanged by just editing the object above
-
-    // AI BUTTON LISTENER
-    const btnAsk = document.getElementById('btn-ask-ai');
-    if (btnAsk) {
-        btnAsk.addEventListener('click', () => {
-            const val = document.getElementById('ai-input').value;
-            if (val) handleAIQuery(val);
+        // Create Table HyperCube with 21 Columns
+        dataModel = await app.createSessionObject({
+            qInfo: { qType: 'table' },
+            qHyperCubeDef: {
+                qDimensions: [
+                    { qDef: { qFieldDefs: ['row_id'] } }, // 0
+                    { qDef: { qFieldDefs: ['order_id'] } }, // 1
+                    { qDef: { qFieldDefs: ['order_date'] } }, // 2
+                    { qDef: { qFieldDefs: ['ship_date'] } }, // 3
+                    { qDef: { qFieldDefs: ['ship_mode'] } }, // 4
+                    { qDef: { qFieldDefs: ['customer_id'] } }, // 5
+                    { qDef: { qFieldDefs: ['customer_name'] } }, // 6
+                    { qDef: { qFieldDefs: ['segment'] } }, // 7
+                    { qDef: { qFieldDefs: ['country'] } }, // 8
+                    { qDef: { qFieldDefs: ['city'] } }, // 9
+                    { qDef: { qFieldDefs: ['state'] } }, // 10
+                    { qDef: { qFieldDefs: ['postal_code'] } }, // 11
+                    { qDef: { qFieldDefs: ['region'] } }, // 12
+                    { qDef: { qFieldDefs: ['product_id'] } }, // 13
+                    { qDef: { qFieldDefs: ['category'] } }, // 14
+                    { qDef: { qFieldDefs: ['sub_category'] } }, // 15
+                    { qDef: { qFieldDefs: ['product_name'] } } // 16
+                ],
+                qMeasures: [
+                    { qDef: { qDef: 'Sum(sales)' } }, // 17
+                    { qDef: { qDef: 'Sum(quantity)' } }, // 18
+                    { qDef: { qDef: 'Avg(discount)' } }, // 19
+                    { qDef: { qDef: 'Sum(profit)' } } // 20
+                ],
+                qInitialDataFetch: [{ qTop: 0, qLeft: 0, qWidth: 21, qHeight: limit }]
+            }
         });
+
+        const qPages = await dataModel.getLayout();
+        currentRows = qPages.qHyperCube.qDataPages[0].qMatrix;
+
+        renderTable(currentRows);
+
+    } catch (e) {
+        tbody.innerHTML = `<tr><td colspan="21" style="text-align:center; color:red;">Error: ${e.message}</td></tr>`;
+        console.error(e);
     }
+}
 
-    // Expose helper for pills
-    window.setAsk = function (txt) {
-        const inp = document.getElementById('ai-input');
-        if (inp) {
-            inp.value = txt;
-            handleAIQuery(txt);
+function renderTable(rows) {
+    const tbody = document.getElementById('data-table-body');
+    let html = '';
+    rows.forEach(r => {
+        // Safe access
+        const getVal = (i) => r[i] ? r[i].qText : '-';
+
+        // Profit Color (Col 20)
+        let profitVal = 0;
+        if (r[20]) profitVal = r[20].qNum;
+        const profitColor = profitVal < 0 ? '#D13438' : '#009845';
+
+        html += `<tr style="border-bottom:1px solid #eee; white-space:nowrap;">`;
+        for (let i = 0; i < 20; i++) {
+            html += `<td style="padding:8px;">${getVal(i)}</td>`;
         }
-    };
+        // Profit Last
+        html += `<td style="padding:8px; text-align:right; color:${profitColor}; font-weight:bold;">${getVal(20)}</td>`;
+        html += `</tr>`;
+    });
+    tbody.innerHTML = html;
+}
 
-    // VOICE RECOGNITION
-    window.startVoice = function () {
-        if (!('webkitSpeechRecognition' in window)) {
-            alert('Voice not supported in this browser. Try Chrome/Edge.');
-            return;
-        }
+// Client-side Sort
+window.toggleSort = function (colIdx) {
+    if (!currentRows.length) return;
 
-        const micBtn = document.getElementById('btn-mic');
-        micBtn.classList.add('listening');
+    sortAsc = !sortAsc;
+    currentRows.sort((a, b) => {
+        let valA = a[colIdx].qNum; // Try number first
+        let valB = b[colIdx].qNum;
 
-        const recognition = new webkitSpeechRecognition();
-        recognition.lang = 'en-US';
-        recognition.interimResults = false;
-        recognition.maxAlternatives = 1;
+        if (isNaN(valA)) valA = a[colIdx].qText;
+        if (isNaN(valB)) valB = b[colIdx].qText;
 
-        recognition.onresult = function (event) {
-            const transcript = event.results[0][0].transcript;
-            log(`🎙️ Voice Command: "${transcript}"`);
-
-            const inp = document.getElementById('ai-input');
-            inp.value = transcript;
-
-            // Auto Submit
-            handleAIQuery(transcript);
-        };
-
-        recognition.onspeechend = function () {
-            recognition.stop();
-            micBtn.classList.remove('listening');
-        };
-
-        recognition.onerror = function (event) {
-            console.error('Voice Error', event.error);
-            micBtn.classList.remove('listening');
-        };
-
-        recognition.start();
-    };
-
-    // ... (Existing Theme Logic)
-
-    // ----------------------------------------------------
-    // AI QUERY ENGINE
-    // ----------------------------------------------------
-    let chartAI = null;
-
-    async function handleAIQuery(text) {
-        const loading = document.getElementById('ai-loading');
-        const resultCard = document.getElementById('ai-result-card');
-        const titleEl = document.getElementById('ai-chart-title');
-
-        // UI Loading State
-        loading.style.display = 'block';
-        resultCard.style.display = 'none';
-
-        // 1. PARSE INTENT (Simple Keyword Matching)
-        text = text.toLowerCase();
-
-        // Detect Measure
-        let qMeasure = { qDef: 'Sum(sales)', label: 'Sales' }; // Default
-        if (text.includes('profit')) qMeasure = { qDef: 'Sum(profit)', label: 'Profit' };
-        else if (text.includes('discount')) qMeasure = { qDef: 'Avg(discount)', label: 'Avg Discount' };
-        else if (text.includes('shipping') || text.includes('cost')) qMeasure = { qDef: 'Sum(shipping_cost)', label: 'Shipping Cost' };
-        else if (text.includes('quantity')) qMeasure = { qDef: 'Sum(quantity)', label: 'Quantity' };
-
-        // Detect Dimension
-        let qDim = { qField: 'region', label: 'Region' }; // Default
-        if (text.includes('category')) qDim = { qField: 'category', label: 'Category' };
-        else if (text.includes('segment')) qDim = { qField: 'segment', label: 'Segment' };
-        else if (text.includes('ship mode') || text.includes('mode')) qDim = { qField: 'ship_mode', label: 'Ship Mode' };
-        else if (text.includes('customer')) qDim = { qField: 'customer_name', label: 'Customer' };
-        else if (text.includes('state')) qDim = { qField: 'state', label: 'State' };
-
-        log(`🤖 AI Interpreted: ${qMeasure.label} by ${qDim.label}`);
-        titleEl.innerText = `Generated Analysis: ${qMeasure.label} by ${qDim.label}`;
-
-        // 2. GENERATE HYPERCUBE
-        try {
-            const aiModel = await app.createSessionObject({
-                qInfo: { qType: 'chart' },
-                qHyperCubeDef: {
-                    qDimensions: [{ qDef: { qFieldDefs: [qDim.qField] } }],
-                    qMeasures: [{ qDef: { qDef: qMeasure.qDef } }],
-                    qInitialDataFetch: [{ qTop: 0, qLeft: 0, qWidth: 2, qHeight: 50 }]
-                }
-            });
-
-            const layout = await aiModel.getLayout();
-            const data = layout.qHyperCube.qDataPages[0].qMatrix.map(r => ({
-                label: r[0].qText,
-                value: r[1].qNum
-            }));
-
-            // 3. RENDER CHART
-            loading.style.display = 'none';
-            resultCard.style.display = 'block';
-
-            const ctx = document.getElementById('chart-ai');
-            if (chartAI) chartAI.destroy();
-
-            chartAI = new Chart(ctx, {
-                type: 'bar', // Dynamic capability possible, but Bar is safest for aggregation
-                data: {
-                    labels: data.map(d => d.label),
-                    datasets: [{
-                        label: qMeasure.label,
-                        data: data.map(d => d.value),
-                        backgroundColor: '#009845',
-                        borderRadius: 4
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { display: false } }, // Clean look
-                    scales: {
-                        y: { beginAtZero: true, grid: { color: '#f0f0f0' } },
-                        x: { grid: { display: false } }
-                    }
-                }
-            });
-
-        } catch (e) {
-            log('❌ AI Generation Failed: ' + e.message);
-            loading.style.display = 'none';
-        }
-    }
-
-    // Brand Click -> Go to Intro
-    const brand = document.getElementById('brand-logo');
-    if (brand) {
-        brand.addEventListener('click', () => {
-            const introBtn = document.getElementById('nav-intro');
-            if (introBtn) introBtn.click();
-        });
-    }
-
-    Object.keys(views).forEach(navId => {
-        const el = document.getElementById(navId);
-        if (el) {
-            el.addEventListener('click', () => {
-                // 1. Update Active Nav Link
-                document.querySelectorAll('.nav-link').forEach(n => n.classList.remove('active'));
-                el.classList.add('active');
-
-                // 2. Hide ALL Views
-                document.querySelectorAll('.view-section').forEach(v => v.style.display = 'none');
-
-                // 3. Show Selected View
-                const targetId = views[navId];
-                const target = document.getElementById(targetId);
-                if (target) {
-                    target.style.display = navId === 'view-settings' ? 'block' : 'block';
-                    // Note: 'block' or 'grid' depending on internal structure. 
-                    // Our views have dashboard-grid inside them, so block is fine for the container.
-                    target.style.display = 'block';
-
-                    log(`📱 Switched to View: ${targetId}`);
-                    // Trigger resize for charts
-                    window.dispatchEvent(new Event('resize'));
-                }
-
-                // 4. Update Header Title
-                if (titles[navId]) {
-                    const [main, sub] = titles[navId].split('|');
-                    document.getElementById('page-heading').innerText = main;
-                    document.querySelector('.page-title p').innerText = sub;
-                }
-            });
-        }
+        if (valA < valB) return sortAsc ? -1 : 1;
+        if (valA > valB) return sortAsc ? 1 : -1;
+        return 0;
     });
 
-    // Dark Mode Toggle Logic
-    const themeToggle = document.getElementById('toggle-theme');
-    if (themeToggle) {
-        themeToggle.addEventListener('change', (e) => {
-            if (e.target.checked) {
-                document.documentElement.style.setProperty('--bg-color', '#121212');
-                document.documentElement.style.setProperty('--sidebar-bg', '#000000');
-                document.documentElement.style.setProperty('--card-bg', '#1E1E1E');
-                document.documentElement.style.setProperty('--text-primary', '#FFFFFF');
-                document.documentElement.style.setProperty('--text-secondary', '#AAAAAA');
-            } else {
-                // Reset to Light (approximate original values)
-                document.documentElement.style.setProperty('--bg-color', '#F7F7F7');
-                document.documentElement.style.setProperty('--sidebar-bg', '#333333');
-                document.documentElement.style.setProperty('--card-bg', '#FFFFFF');
-                document.documentElement.style.setProperty('--text-primary', '#1a1a1a');
-                document.documentElement.style.setProperty('--text-secondary', '#595959');
+    renderTable(currentRows);
+};
+
+// ... (Existing Loop for Views) -> This remains unchanged by just editing the object above
+
+// AI BUTTON LISTENER
+const btnAsk = document.getElementById('btn-ask-ai');
+if (btnAsk) {
+    btnAsk.addEventListener('click', () => {
+        const val = document.getElementById('ai-input').value;
+        if (val) handleAIQuery(val);
+    });
+}
+
+// Expose helper for pills
+window.setAsk = function (txt) {
+    const inp = document.getElementById('ai-input');
+    if (inp) {
+        inp.value = txt;
+        handleAIQuery(txt);
+    }
+};
+
+// VOICE RECOGNITION
+window.startVoice = function () {
+    if (!('webkitSpeechRecognition' in window)) {
+        alert('Voice not supported in this browser. Try Chrome/Edge.');
+        return;
+    }
+
+    const micBtn = document.getElementById('btn-mic');
+    micBtn.classList.add('listening');
+
+    const recognition = new webkitSpeechRecognition();
+    recognition.lang = 'en-US';
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+
+    recognition.onresult = function (event) {
+        const transcript = event.results[0][0].transcript;
+        log(`🎙️ Voice Command: "${transcript}"`);
+
+        const inp = document.getElementById('ai-input');
+        inp.value = transcript;
+
+        // Auto Submit
+        handleAIQuery(transcript);
+    };
+
+    recognition.onspeechend = function () {
+        recognition.stop();
+        micBtn.classList.remove('listening');
+    };
+
+    recognition.onerror = function (event) {
+        console.error('Voice Error', event.error);
+        micBtn.classList.remove('listening');
+    };
+
+    recognition.start();
+};
+
+// ... (Existing Theme Logic)
+
+// ----------------------------------------------------
+// AI QUERY ENGINE
+// ----------------------------------------------------
+let chartAI = null;
+
+async function handleAIQuery(text) {
+    const loading = document.getElementById('ai-loading');
+    const resultCard = document.getElementById('ai-result-card');
+    const titleEl = document.getElementById('ai-chart-title');
+
+    // UI Loading State
+    loading.style.display = 'block';
+    resultCard.style.display = 'none';
+
+    // 1. PARSE INTENT (Simple Keyword Matching)
+    text = text.toLowerCase();
+
+    // Detect Measure
+    let qMeasure = { qDef: 'Sum(sales)', label: 'Sales' }; // Default
+    if (text.includes('profit')) qMeasure = { qDef: 'Sum(profit)', label: 'Profit' };
+    else if (text.includes('discount')) qMeasure = { qDef: 'Avg(discount)', label: 'Avg Discount' };
+    else if (text.includes('shipping') || text.includes('cost')) qMeasure = { qDef: 'Sum(shipping_cost)', label: 'Shipping Cost' };
+    else if (text.includes('quantity')) qMeasure = { qDef: 'Sum(quantity)', label: 'Quantity' };
+
+    // Detect Dimension
+    let qDim = { qField: 'region', label: 'Region' }; // Default
+    if (text.includes('category')) qDim = { qField: 'category', label: 'Category' };
+    else if (text.includes('segment')) qDim = { qField: 'segment', label: 'Segment' };
+    else if (text.includes('ship mode') || text.includes('mode')) qDim = { qField: 'ship_mode', label: 'Ship Mode' };
+    else if (text.includes('customer')) qDim = { qField: 'customer_name', label: 'Customer' };
+    else if (text.includes('state')) qDim = { qField: 'state', label: 'State' };
+
+    log(`🤖 AI Interpreted: ${qMeasure.label} by ${qDim.label}`);
+    titleEl.innerText = `Generated Analysis: ${qMeasure.label} by ${qDim.label}`;
+
+    // 2. GENERATE HYPERCUBE
+    try {
+        const aiModel = await app.createSessionObject({
+            qInfo: { qType: 'chart' },
+            qHyperCubeDef: {
+                qDimensions: [{ qDef: { qFieldDefs: [qDim.qField] } }],
+                qMeasures: [{ qDef: { qDef: qMeasure.qDef } }],
+                qInitialDataFetch: [{ qTop: 0, qLeft: 0, qWidth: 2, qHeight: 50 }]
+            }
+        });
+
+        const layout = await aiModel.getLayout();
+        const data = layout.qHyperCube.qDataPages[0].qMatrix.map(r => ({
+            label: r[0].qText,
+            value: r[1].qNum
+        }));
+
+        // 3. RENDER CHART
+        loading.style.display = 'none';
+        resultCard.style.display = 'block';
+
+        const ctx = document.getElementById('chart-ai');
+        if (chartAI) chartAI.destroy();
+
+        chartAI = new Chart(ctx, {
+            type: 'bar', // Dynamic capability possible, but Bar is safest for aggregation
+            data: {
+                labels: data.map(d => d.label),
+                datasets: [{
+                    label: qMeasure.label,
+                    data: data.map(d => d.value),
+                    backgroundColor: '#009845',
+                    borderRadius: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } }, // Clean look
+                scales: {
+                    y: { beginAtZero: true, grid: { color: '#f0f0f0' } },
+                    x: { grid: { display: false } }
+                }
+            }
+        });
+
+    } catch (e) {
+        log('❌ AI Generation Failed: ' + e.message);
+        loading.style.display = 'none';
+    }
+}
+
+// Brand Click -> Go to Intro
+const brand = document.getElementById('brand-logo');
+if (brand) {
+    brand.addEventListener('click', () => {
+        const introBtn = document.getElementById('nav-intro');
+        if (introBtn) introBtn.click();
+    });
+}
+
+Object.keys(views).forEach(navId => {
+    const el = document.getElementById(navId);
+    if (el) {
+        el.addEventListener('click', () => {
+            // 1. Update Active Nav Link
+            document.querySelectorAll('.nav-link').forEach(n => n.classList.remove('active'));
+            el.classList.add('active');
+
+            // 2. Hide ALL Views
+            document.querySelectorAll('.view-section').forEach(v => v.style.display = 'none');
+
+            // 3. Show Selected View
+            const targetId = views[navId];
+            const target = document.getElementById(targetId);
+            if (target) {
+                target.style.display = navId === 'view-settings' ? 'block' : 'block';
+                // Note: 'block' or 'grid' depending on internal structure. 
+                // Our views have dashboard-grid inside them, so block is fine for the container.
+                target.style.display = 'block';
+
+                log(`📱 Switched to View: ${targetId}`);
+                // Trigger resize for charts
+                window.dispatchEvent(new Event('resize'));
+            }
+
+            // 4. Update Header Title
+            if (titles[navId]) {
+                const [main, sub] = titles[navId].split('|');
+                document.getElementById('page-heading').innerText = main;
+                document.querySelector('.page-title p').innerText = sub;
             }
         });
     }
 });
+
+// Dark Mode Toggle Logic
+const themeToggle = document.getElementById('toggle-theme');
+if (themeToggle) {
+    themeToggle.addEventListener('change', (e) => {
+        if (e.target.checked) {
+            document.documentElement.style.setProperty('--bg-color', '#121212');
+            document.documentElement.style.setProperty('--sidebar-bg', '#000000');
+            document.documentElement.style.setProperty('--card-bg', '#1E1E1E');
+            document.documentElement.style.setProperty('--text-primary', '#FFFFFF');
+            document.documentElement.style.setProperty('--text-secondary', '#AAAAAA');
+        } else {
+            // Reset to Light (approximate original values)
+            document.documentElement.style.setProperty('--bg-color', '#F7F7F7');
+            document.documentElement.style.setProperty('--sidebar-bg', '#333333');
+            document.documentElement.style.setProperty('--card-bg', '#FFFFFF');
+            document.documentElement.style.setProperty('--text-primary', '#1a1a1a');
+            document.documentElement.style.setProperty('--text-secondary', '#595959');
+        }
+    });
+}
+
+}); // End DOMContentLoaded
 
 async function updateDashboard() {
     try {
