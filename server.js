@@ -180,11 +180,12 @@ const server = app.listen(PORT, () => {
 server.on('upgrade', (req, socket, head) => {
     if (req.url.startsWith('/qlik-ws')) {
         const targetHost = 'flo13jpumt442e8.in.qlikcloud.com';
-        console.log('🔄 [Proxy] Incoming Connection:', req.url);
+        console.log('🔄 Proxying WebSocket to:', targetHost);
 
         // Parse URL to extract token and params
         const requestUrl = new URL(req.url, `http://${req.headers.host}`);
         const accessToken = requestUrl.searchParams.get('access_token');
+        const clientId = requestUrl.searchParams.get('qlik-client-id');
 
         // Filter headers to avoid conflicts
         const headers = {};
@@ -205,47 +206,63 @@ server.on('upgrade', (req, socket, head) => {
             headers['Sec-WebSocket-Protocol'] = req.headers['sec-websocket-protocol'];
         }
 
-        // INJECT HEADERS (Auth Only)
+        // INJECT HEADERS (Auth + Integration ID)
         if (accessToken) {
             headers['Authorization'] = `Bearer ${accessToken}`;
-        } else {
-            console.error('❌ [Proxy] Missing Access Token in Query Params');
-            socket.write('HTTP/1.1 401 Unauthorized\r\n\r\n');
-            socket.destroy();
-            return;
+        }
+        if (clientId) {
+            headers['Qlik-Web-Integration-Id'] = clientId; // Attempting to use ClientID as Web Integration ID
         }
 
+        // Clean Path: Remove query params entirely to avoid conflicts
+        // We only need the /app/{id} part.
         const targetPath = requestUrl.pathname.replace('/qlik-ws', '');
-        console.log(`🔗 [Proxy] Upstream: wss://${targetHost}${targetPath}`);
+
+        console.log('🔗 Upstream Path:', targetPath);
+        console.log('📤 Sending Headers:', JSON.stringify(headers)); // Debug
 
         const proxyReq = https.request({
             hostname: targetHost,
             port: 443,
-            path: targetPath,
+            path: targetPath, // Sending clean path without query params
             method: 'GET',
             headers: headers,
-            family: 4,
-            rejectUnauthorized: false
+            family: 4, // Force IPv4 to avoid potential IPv6 timeouts
+            rejectUnauthorized: false // Permissive SSL for proxy stability
         });
 
         proxyReq.on('upgrade', (proxyRes, proxySocket, proxyHead) => {
-            console.log('✅ [Proxy] Upstream Connected!');
-            socket.write([
+            console.log('✅ WS Handshake Proxy Successful');
+
+            // Prevent Crashes on Socket Errors (ECONNRESET)
+            proxySocket.on('error', (err) => console.error('❌ Proxy Socket Error:', err.message));
+            socket.on('error', (err) => console.error('❌ Client Socket Error:', err.message));
+
+            // Reconstruct handshake response
+            const responseHeaders = [
                 'HTTP/1.1 101 Switching Protocols',
                 'Upgrade: websocket',
                 'Connection: Upgrade',
-                'Sec-WebSocket-Accept: ' + proxyRes.headers['sec-websocket-accept'],
-                proxyRes.headers['sec-websocket-protocol'] ? 'Sec-WebSocket-Protocol: ' + proxyRes.headers['sec-websocket-protocol'] : ''
-            ].join('\r\n') + '\r\n\r\n');
+                'Sec-WebSocket-Accept: ' + proxyRes.headers['sec-websocket-accept']
+            ];
 
+            if (proxyRes.headers['sec-websocket-protocol']) {
+                responseHeaders.push('Sec-WebSocket-Protocol: ' + proxyRes.headers['sec-websocket-protocol']);
+            }
+
+            socket.write(responseHeaders.join('\r\n') + '\r\n\r\n');
+
+            // Pipe data
             proxySocket.pipe(socket);
             socket.pipe(proxySocket);
         });
 
+        // Handle HTTP errors (e.g., 401, 403, 400) - Qlik rejected the connection
         proxyReq.on('response', (res) => {
-            console.error(`❌ [Proxy] Upstream Rejected: ${res.statusCode} ${res.statusMessage}`);
-            // Drain response to avoid memory leaks
-            res.on('data', () => { });
+            console.error(`❌ Qlik Rejected Connection. Status: ${res.statusCode}`);
+            console.error('Headers:', JSON.stringify(res.headers));
+
+            // Forward the error to the client
             if (!socket.destroyed) {
                 socket.write(`HTTP/1.1 ${res.statusCode} ${res.statusMessage}\r\n\r\n`);
                 socket.end();
@@ -253,8 +270,11 @@ server.on('upgrade', (req, socket, head) => {
         });
 
         proxyReq.on('error', (err) => {
-            console.error('❌ [Proxy] Network Error:', err.message);
-            if (!socket.destroyed) socket.end();
+            console.error('❌ Proxy Request Error:', err.message);
+            if (!socket.destroyed) {
+                socket.write('HTTP/1.1 502 Bad Gateway\r\n\r\n');
+                socket.end();
+            }
         });
 
         proxyReq.end();

@@ -356,6 +356,8 @@ function updateStatus(state) {
 function log(msg) {
     console.log(msg);
     // UI Log logic is often handled in connect.js, but if we need it here:
-    const el = document.getElementById('ui-log');
     if (el) { el.innerHTML += `> ${msg}<br>`; el.scrollTop = el.scrollHeight; }
 }
+
+// Initialize App when DOM is ready
+document.addEventListener('DOMContentLoaded', init);
