@@ -27,9 +27,6 @@
                 <div class="nav-link" id="nav-ai">
                     <span>🤖</span> Ask AI Analyst
                 </div>
-                <div class="nav-link" id="nav-data">
-                    <span>💾</span> Dataset Explorer
-                </div>
                 <div class="nav-link" id="nav-overview">
                     <span>📊</span> Overview
                 </div>
@@ -42,23 +39,19 @@
                 <div class="nav-link" id="nav-products">
                     <span>📦</span> Products
                 </div>
+                <div class="nav-link" id="nav-data">
+                    <span>💾</span> Dataset Explorer
+                </div>
                 <div class="nav-link" id="nav-settings">
                     <span>⚙️</span> Settings
                 </div>
             </nav>
             <div class="sidebar-footer">
-                <div class="sidebar-footer">
-                    <div style="padding:0 10px; margin-bottom:5px;">
-                        <button onclick="sessionStorage.clear(); window.location.reload();"
-                            style="width:100%; background:#333; color:#aaa; border:1px solid #444; padding:4px; font-size:10px; cursor:pointer; border-radius:4px;">
-                            ♻️ Reset Connection
-                        </button>
-                    </div>
-                    <!-- DEBUG LOG RESTORED -->
-                    <div id="ui-log"
-                        style="font-family:monospace; font-size:10px; color:#aaa; margin-top:5px; max-height:150px; overflow-y:auto; word-break:break-all; padding:5px; background:rgba(0,0,0,0.2);">
-                    </div>
+                <!-- LOG CONTAINER -->
+                <div id="ui-log"
+                    style="font-family:monospace; font-size:10px; color:#aaa; margin-top:10px; max-height:100px; overflow-y:auto; word-break:break-all;">
                 </div>
+            </div>
         </aside>
 
         <!-- MAIN CONTENT -->
@@ -70,7 +63,13 @@
                     <p>Supply Chain Key Performance Indicators</p>
                 </div>
                 <div class="header-actions">
-                    <!-- Clean Header -->
+                    <!-- CLEAR SELECTIONS BUTTON ONLY -->
+                    <div style="display:flex; gap:10px; align-items:center;">
+                        <button onclick="if(app) app.clearAll()"
+                            style="background:white; border:1px solid #ccc; padding:6px 12px; border-radius:6px; font-size:12px; cursor:pointer; color:#333; display:flex; align-items:center; gap:5px;">
+                            <span>✖</span> Clear Filters
+                        </button>
+                    </div>
                 </div>
             </header>
 
@@ -280,18 +279,49 @@
                         <div style="flex:1; overflow:auto;">
                             <table class="qlik-table" style="width:100%; border-collapse:collapse; font-size:12px;">
                                 <thead style="position:sticky; top:0; background:#f9f9f9; z-index:1;">
-                                    <tr style="text-align:left; color:#666;">
-                                        <th style="padding:10px; border-bottom:2px solid #ddd;">Order Date</th>
-                                        <th style="padding:10px; border-bottom:2px solid #ddd;">Customer</th>
-                                        <th style="padding:10px; border-bottom:2px solid #ddd;">Region</th>
-                                        <th style="padding:10px; border-bottom:2px solid #ddd;">Category</th>
-                                        <th style="padding:10px; border-bottom:2px solid #ddd;">Product Name</th>
-                                        <th style="padding:10px; border-bottom:2px solid #ddd; text-align:right;">Sales
-                                        </th>
-                                        <th style="padding:10px; border-bottom:2px solid #ddd; text-align:right;">Profit
-                                        </th>
-                                        <th style="padding:10px; border-bottom:2px solid #ddd; text-align:center;">
-                                            Discount</th>
+                                    <tr style="text-align:left; color:#666; white-space:nowrap;">
+                                        <th style="padding:10px; border-bottom:2px solid #ddd; cursor:pointer;"
+                                            onclick="sortData('row_id')">Row ID ⇅</th>
+                                        <th style="padding:10px; border-bottom:2px solid #ddd; cursor:pointer;"
+                                            onclick="sortData('order_id')">Order ID ⇅</th>
+                                        <th style="padding:10px; border-bottom:2px solid #ddd; cursor:pointer;"
+                                            onclick="sortData('order_date')">Order Date ⇅</th>
+                                        <th style="padding:10px; border-bottom:2px solid #ddd; cursor:pointer;"
+                                            onclick="sortData('ship_date')">Ship Date ⇅</th>
+                                        <th style="padding:10px; border-bottom:2px solid #ddd; cursor:pointer;"
+                                            onclick="sortData('ship_mode')">Ship Mode ⇅</th>
+                                        <th style="padding:10px; border-bottom:2px solid #ddd; cursor:pointer;"
+                                            onclick="sortData('customer_id')">Customer ID ⇅</th>
+                                        <th style="padding:10px; border-bottom:2px solid #ddd; cursor:pointer;"
+                                            onclick="sortData('customer_name')">Customer Name ⇅</th>
+                                        <th style="padding:10px; border-bottom:2px solid #ddd; cursor:pointer;"
+                                            onclick="sortData('segment')">Segment ⇅</th>
+                                        <th style="padding:10px; border-bottom:2px solid #ddd; cursor:pointer;"
+                                            onclick="sortData('country')">Country ⇅</th>
+                                        <th style="padding:10px; border-bottom:2px solid #ddd; cursor:pointer;"
+                                            onclick="sortData('city')">City ⇅</th>
+                                        <th style="padding:10px; border-bottom:2px solid #ddd; cursor:pointer;"
+                                            onclick="sortData('state')">State ⇅</th>
+                                        <th style="padding:10px; border-bottom:2px solid #ddd; cursor:pointer;"
+                                            onclick="sortData('postal_code')">Postal Code ⇅</th>
+                                        <th style="padding:10px; border-bottom:2px solid #ddd; cursor:pointer;"
+                                            onclick="sortData('region')">Region ⇅</th>
+                                        <th style="padding:10px; border-bottom:2px solid #ddd; cursor:pointer;"
+                                            onclick="sortData('product_id')">Product ID ⇅</th>
+                                        <th style="padding:10px; border-bottom:2px solid #ddd; cursor:pointer;"
+                                            onclick="sortData('category')">Category ⇅</th>
+                                        <th style="padding:10px; border-bottom:2px solid #ddd; cursor:pointer;"
+                                            onclick="sortData('sub_category')">Sub-Category ⇅</th>
+                                        <th style="padding:10px; border-bottom:2px solid #ddd; cursor:pointer;"
+                                            onclick="sortData('product_name')">Product Name ⇅</th>
+                                        <th style="padding:10px; border-bottom:2px solid #ddd; cursor:pointer; text-align:right;"
+                                            onclick="sortData('sales')">Sales ⇅</th>
+                                        <th style="padding:10px; border-bottom:2px solid #ddd; cursor:pointer; text-align:right;"
+                                            onclick="sortData('quantity')">Quantity ⇅</th>
+                                        <th style="padding:10px; border-bottom:2px solid #ddd; cursor:pointer; text-align:center;"
+                                            onclick="sortData('discount')">Discount ⇅</th>
+                                        <th style="padding:10px; border-bottom:2px solid #ddd; cursor:pointer; text-align:right;"
+                                            onclick="sortData('profit')">Profit ⇅</th>
                                     </tr>
                                 </thead>
                                 <tbody id="data-table-body" style="color:#333;">

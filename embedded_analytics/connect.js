@@ -10,13 +10,13 @@ const CONFIG = {
 let app = null;
 
 function log(msg) {
-    const el = document.getElementById('ui-log'); // Changed to Sidebar Log
+    const el = document.getElementById('debug-console');
     if (el) { el.innerHTML += `> ${msg}<br>`; el.scrollTop = el.scrollHeight; }
     console.log(msg);
 }
 
 function authenticate() {
-    // Reverted to Static /qlik/ Redirect
+    // Dynamic Redirect URL (Works for Localhost AND Online/Render)
     const redirectUrl = window.location.origin + '/qlik/';
     const state = Math.random().toString(36).substring(7);
     const authUrl = `https://${CONFIG.url}/oauth/authorize?client_id=${CONFIG.clientId}&response_type=code&redirect_uri=${encodeURIComponent(redirectUrl)}&scope=user_default%20offline_access&state=${state}`;
@@ -31,12 +31,12 @@ async function connectToQlik() {
     // 1. Check for Authorization Code in URL
     const urlParams = new URLSearchParams(window.location.search);
     const authCode = urlParams.get('code');
-    let accessToken = sessionStorage.getItem('qlik_token');
+    let accessToken = sessionStorage.getItem('qlik_token'); // Use stored token if available
 
     try {
         // STEP A: Try Guest Token (Recruiter Mode) AUTOMATICALLY
         if (!authCode && !accessToken) {
-            log('🎫 Attempting Guest Access...');
+            log('🎫 Attempting Guest Access (Recruiter Mode)...');
             const guestRes = await fetch('/api/qlik/guest', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -61,8 +61,10 @@ async function connectToQlik() {
         if (authCode) {
             log('🔑 Exchanging Code for Token...');
 
+            // Clean URL
             window.history.replaceState({}, document.title, window.location.pathname);
 
+            // Use Local Proxy (Bypasses CORS)
             const tokenResponse = await fetch('/api/qlik/token', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -71,7 +73,7 @@ async function connectToQlik() {
                     clientId: CONFIG.clientId,
                     clientSecret: CONFIG.clientSecret,
                     code: authCode,
-                    redirectUri: window.location.origin + '/qlik/' // Static /qlik/
+                    redirectUri: window.location.origin + '/qlik/' // Send dynamic URI
                 })
             });
 

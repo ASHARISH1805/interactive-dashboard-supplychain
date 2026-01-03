@@ -220,7 +220,7 @@ server.on('upgrade', (req, socket, head) => {
             headers['Authorization'] = `Bearer ${accessToken}`;
         }
         if (clientId) {
-            headers['Qlik-Web-Integration-Id'] = clientId; // Restore Attempt to use ClientID as Web Integration ID
+            headers['Qlik-Web-Integration-Id'] = clientId; // Attempting to use ClientID as Web Integration ID
         }
 
         // Clean Path: Remove query params entirely to avoid conflicts
